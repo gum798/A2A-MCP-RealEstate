@@ -20,7 +20,8 @@ mcp = FastMCP("Location Service API")
 
 # API 키 설정
 SEOUL_API_KEY = os.getenv("SEOUL_API_KEY", "")  # 서울시 공공데이터 API 키
-KAKAO_API_KEY = os.getenv("KAKAO_API_KEY", "")  # 카카오 API 키
+NAVER_CLIENT_ID = os.getenv("NAVER_CLIENT_ID", "")  # 네이버 클라이언트 ID
+NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET", "")  # 네이버 클라이언트 시크릿
 
 def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """
@@ -175,16 +176,19 @@ async def address_to_coordinates(address: str) -> Dict[str, Any]:
     Returns:
         좌표 정보 (위도, 경도)
     """
-    if not KAKAO_API_KEY:
+    if not NAVER_CLIENT_ID or not NAVER_CLIENT_SECRET:
         return {
             "success": False,
-            "error": "카카오 API 키가 설정되지 않았습니다",
-            "message": "KAKAO_API_KEY 환경변수를 설정해주세요"
+            "error": "네이버 API 키가 설정되지 않았습니다",
+            "message": "NAVER_CLIENT_ID, NAVER_CLIENT_SECRET 환경변수를 설정해주세요"
         }
     
     try:
-        url = "https://dapi.kakao.com/v2/local/search/address.json"
-        headers = {"Authorization": f"KakaoAK {KAKAO_API_KEY}"}
+        url = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode"
+        headers = {
+            "X-NCP-APIGW-API-KEY-ID": NAVER_CLIENT_ID,
+            "X-NCP-APIGW-API-KEY": NAVER_CLIENT_SECRET
+        }
         params = {"query": address}
         
         async with httpx.AsyncClient() as client:
@@ -193,7 +197,7 @@ async def address_to_coordinates(address: str) -> Dict[str, Any]:
             
             data = response.json()
             
-            if not data.get("documents"):
+            if not data.get("addresses"):
                 return {
                     "success": False,
                     "error": "주소를 찾을 수 없습니다",
@@ -201,18 +205,18 @@ async def address_to_coordinates(address: str) -> Dict[str, Any]:
                 }
             
             # 첫 번째 결과 사용
-            result = data["documents"][0]
+            result = data["addresses"][0]
             
             return {
                 "success": True,
                 "data": {
-                    "address": result.get("address_name", address),
-                    "road_address": result.get("road_address", {}).get("address_name", ""),
+                    "address": result.get("jibunAddress", address),
+                    "road_address": result.get("roadAddress", ""),
                     "lat": float(result["y"]),
                     "lon": float(result["x"]),
                     "region": {
-                        "region_1depth_name": result.get("address", {}).get("region_1depth_name", ""),
-                        "region_2depth_name": result.get("address", {}).get("region_2depth_name", ""),
+                        "region_1depth_name": result.get("addressElements", [{}])[0].get("longName", ""),
+                        "region_2depth_name": result.get("addressElements", [{}])[1].get("longName", "") if len(result.get("addressElements", [])) > 1 else "",
                         "region_3depth_name": result.get("address", {}).get("region_3depth_name", "")
                     }
                 },
@@ -240,41 +244,43 @@ async def find_nearby_facilities(lat: float, lon: float, category: str = "편의
     Returns:
         주변 편의시설 정보
     """
-    if not KAKAO_API_KEY:
+    if not NAVER_CLIENT_ID or not NAVER_CLIENT_SECRET:
         return {
             "success": False,
-            "error": "카카오 API 키가 설정되지 않았습니다",
-            "message": "KAKAO_API_KEY 환경변수를 설정해주세요"
+            "error": "네이버 API 키가 설정되지 않았습니다",
+            "message": "NAVER_CLIENT_ID, NAVER_CLIENT_SECRET 환경변수를 설정해주세요"
         }
     
     try:
-        url = "https://dapi.kakao.com/v2/local/search/category.json"
-        headers = {"Authorization": f"KakaoAK {KAKAO_API_KEY}"}
-        
-        # 카테고리 코드 매핑
-        category_codes = {
-            "편의점": "CS2",
-            "마트": "MT1", 
-            "대형마트": "MT1",
-            "병원": "HP8",
-            "약국": "PM9",
-            "학교": "SC4",
-            "은행": "BK9",
-            "주유소": "OL7",
-            "지하철역": "SW8",
-            "버스정류장": "SW8",
-            "공원": "AT4",
-            "관광명소": "AT4",
-            "음식점": "FD6",
-            "카페": "CE7"
+        url = "https://naveropenapi.apigw.ntruss.com/map-place/v1/search"
+        headers = {
+            "X-NCP-APIGW-API-KEY-ID": NAVER_CLIENT_ID,
+            "X-NCP-APIGW-API-KEY": NAVER_CLIENT_SECRET
         }
         
-        category_code = category_codes.get(category, "CS2")  # 기본값: 편의점
+        # 카테고리 한글명 매핑 (네이버는 한글 검색어 사용)
+        category_mapping = {
+            "편의점": "편의점",
+            "마트": "마트", 
+            "대형마트": "대형마트",
+            "병원": "병원",
+            "약국": "약국",
+            "학교": "학교",
+            "은행": "은행",
+            "주유소": "주유소",
+            "지하철역": "지하철역",
+            "버스정류장": "버스정류장",
+            "공원": "공원",
+            "관광명소": "관광명소",
+            "음식점": "음식점",
+            "카페": "카페"
+        }
+        
+        search_query = category_mapping.get(category, "편의점")  # 기본값: 편의점
         
         params = {
-            "category_group_code": category_code,
-            "x": lon,
-            "y": lat,
+            "query": search_query,
+            "coordinate": f"{lon},{lat}",
             "radius": radius,
             "sort": "distance"
         }
@@ -286,19 +292,19 @@ async def find_nearby_facilities(lat: float, lon: float, category: str = "편의
             data = response.json()
             
             facilities = []
-            for place in data.get("documents", []):
+            for place in data.get("places", []):
                 facility = {
-                    "name": place.get("place_name", ""),
-                    "category": place.get("category_name", ""),
-                    "address": place.get("address_name", ""),
-                    "road_address": place.get("road_address_name", ""),
-                    "phone": place.get("phone", ""),
-                    "distance": int(place.get("distance", 0)),
+                    "name": place.get("name", ""),
+                    "category": place.get("category", [category]),
+                    "address": place.get("address", ""),
+                    "road_address": place.get("roadAddress", ""),
+                    "phone": place.get("tel", ""),
+                    "distance": calculate_distance(lat, lon, float(place.get("y", 0)), float(place.get("x", 0))) * 1000,  # km를 m로 변환
                     "coordinates": {
-                        "lat": float(place["y"]),
-                        "lon": float(place["x"])
+                        "lat": float(place.get("y", 0)),
+                        "lon": float(place.get("x", 0))
                     },
-                    "place_url": place.get("place_url", "")
+                    "place_url": place.get("bizhourInfo", "")
                 }
                 facilities.append(facility)
             
@@ -475,7 +481,8 @@ async def get_location_guide() -> str:
 - 음식점, 카페
 
 ## API 키 설정
-- KAKAO_API_KEY: 카카오 개발자 API 키 필요
+- NAVER_CLIENT_ID: 네이버 클라우드 플랫폼 클라이언트 ID 필요
+- NAVER_CLIENT_SECRET: 네이버 클라우드 플랫폼 클라이언트 시크릿 필요
 - SEOUL_API_KEY: 서울시 공공데이터 API 키 (선택사항)
 
 ## 위치 점수 평가 기준
@@ -488,7 +495,7 @@ async def get_location_guide() -> str:
 # 서버 실행
 if __name__ == "__main__":
     print("📍 위치 기반 서비스 MCP 서버")
-    print(f"🔑 카카오 API 키: {'✅ 설정됨' if KAKAO_API_KEY else '❌ 미설정'}")
+    print(f"🔑 네이버 API 키: {'✅ 설정됨' if NAVER_CLIENT_ID and NAVER_CLIENT_SECRET else '❌ 미설정'}")
     print(f"🏛️  서울시 API 키: {'✅ 설정됨' if SEOUL_API_KEY else '❌ 미설정'}")
     print("🚀 FastMCP 서버 시작...")
     mcp.run()

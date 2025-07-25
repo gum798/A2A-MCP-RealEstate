@@ -21,7 +21,8 @@ mcp = FastMCP("Real Estate Recommendation System")
 
 # API 키 설정
 MOLIT_API_KEY = os.getenv("MOLIT_API_KEY", "")
-KAKAO_API_KEY = os.getenv("KAKAO_API_KEY", "")
+NAVER_CLIENT_ID = os.getenv("NAVER_CLIENT_ID", "")
+NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET", "")
 
 @dataclass
 class PropertyInfo:
@@ -163,16 +164,19 @@ async def analyze_location(address: str, lat: float = None, lon: float = None) -
     try:
         # 좌표가 없으면 주소로 변환
         if lat is None or lon is None:
-            if not KAKAO_API_KEY:
+            if not NAVER_CLIENT_ID or not NAVER_CLIENT_SECRET:
                 return {
                     "success": False,
-                    "error": "카카오 API 키가 설정되지 않았습니다",
-                    "message": "KAKAO_API_KEY 환경변수를 설정해주세요"
+                    "error": "네이버 API 키가 설정되지 않았습니다",
+                    "message": "NAVER_CLIENT_ID, NAVER_CLIENT_SECRET 환경변수를 설정해주세요"
                 }
             
             # 주소를 좌표로 변환
-            url = "https://dapi.kakao.com/v2/local/search/address.json"
-            headers = {"Authorization": f"KakaoAK {KAKAO_API_KEY}"}
+            url = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode"
+            headers = {
+                "X-NCP-APIGW-API-KEY-ID": NAVER_CLIENT_ID,
+                "X-NCP-APIGW-API-KEY": NAVER_CLIENT_SECRET
+            }
             params = {"query": address}
             
             async with httpx.AsyncClient() as client:
@@ -180,14 +184,14 @@ async def analyze_location(address: str, lat: float = None, lon: float = None) -
                 response.raise_for_status()
                 data = response.json()
                 
-                if not data.get("documents"):
+                if not data.get("addresses"):
                     return {
                         "success": False,
                         "error": "주소를 찾을 수 없습니다",
                         "message": f"'{address}' 주소 검색 결과가 없습니다"
                     }
                 
-                result = data["documents"][0]
+                result = data["addresses"][0]
                 lat = float(result["y"])
                 lon = float(result["x"])
         
@@ -767,7 +771,8 @@ async def get_usage_guide() -> str:
 
 ## API 키 설정
 - MOLIT_API_KEY: 국토교통부 공공데이터 API 키
-- KAKAO_API_KEY: 카카오 개발자 API 키
+- NAVER_CLIENT_ID: 네이버 클라우드 플랫폼 클라이언트 ID
+- NAVER_CLIENT_SECRET: 네이버 클라우드 플랫폼 클라이언트 시크릿
 """
     return guide
 
@@ -775,6 +780,6 @@ async def get_usage_guide() -> str:
 if __name__ == "__main__":
     print("🏠 부동산 추천 시스템 MCP 서버")
     print(f"🔑 국토교통부 API 키: {'✅ 설정됨' if MOLIT_API_KEY else '❌ 미설정'}")
-    print(f"🗺️  카카오 API 키: {'✅ 설정됨' if KAKAO_API_KEY else '❌ 미설정'}")
+    print(f"🗺️  네이버 API 키: {'✅ 설정됨' if NAVER_CLIENT_ID and NAVER_CLIENT_SECRET else '❌ 미설정'}")
     print("🚀 FastMCP 서버 시작...")
     mcp.run()

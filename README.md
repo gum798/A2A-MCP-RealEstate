@@ -27,7 +27,7 @@ A2A MCP Real Estate는 한국 부동산 시장을 위한 AI 기반 추천 시스
 
 - Python 3.12+
 - 국토교통부 공공데이터포털 API 키
-- 카카오 개발자센터 API 키
+- 네이버 클라우드 플랫폼 API 키
 
 ### Installation
 
@@ -53,7 +53,8 @@ cp .env.example .env
 ```bash
 # .env file
 MOLIT_API_KEY=your_molit_api_key_here
-KAKAO_API_KEY=your_kakao_api_key_here
+NAVER_CLIENT_ID=your_naver_client_id_here
+NAVER_CLIENT_SECRET=your_naver_client_secret_here
 PORT=8080
 AGENT_ID=agent-py-001
 AGENT_NAME=A2A_Python_Agent
@@ -199,10 +200,11 @@ Add to your Claude Desktop MCP configuration:
 2. "아파트 실거래가 정보" 활용신청
 3. 승인된 API 키를 `MOLIT_API_KEY`에 설정
 
-### 2. 카카오 개발자센터
-1. [카카오 개발자센터](https://developers.kakao.com/) 앱 생성
-2. "로컬 > 주소 검색" API 활성화
-3. REST API 키를 `KAKAO_API_KEY`에 설정
+### 2. 네이버 클라우드 플랫폼
+1. [네이버 클라우드 플랫폼](https://www.ncloud.com/) 프로젝트 생성
+2. "Application > Maps" 서비스 신청
+3. 클라이언트 ID를 `NAVER_CLIENT_ID`에 설정
+4. 클라이언트 시크릿을 `NAVER_CLIENT_SECRET`에 설정
 
 ## 📈 Usage Examples
 
