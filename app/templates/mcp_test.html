@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+
+{% block title %}MCP 기능 테스트{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-database text-info"></i> MCP 기능 테스트</h2>
+            <a href="/web/" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> 홈으로
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- 실거래가 조회 -->
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-line"></i> 아파트 실거래가 조회</h5>
+            </div>
+            <div class="card-body">
+                <form action="/web/mcp/apartment-trade" method="post" class="needs-validation" novalidate>
+                    <div class="mb-3">
+                        <label for="lawd_cd" class="form-label">지역코드</label>
+                        <select class="form-select" id="lawd_cd" name="lawd_cd" required>
+                            <option value="">지역을 선택하세요</option>
+                            <option value="11680">서울 강남구</option>
+                            <option value="11500">서울 강서구</option>
+                            <option value="11620">서울 관악구</option>
+                            <option value="11740">서울 강동구</option>
+                            <option value="41110">경기 수원시</option>
+                            <option value="41130">경기 성남시</option>
+                            <option value="41460">경기 용인시</option>
+                        </select>
+                        <div class="invalid-feedback">지역을 선택해주세요.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="deal_ymd" class="form-label">계약년월</label>
+                        <input type="month" class="form-control" id="deal_ymd" name="deal_ymd" 
+                               value="2024-01" max="2024-12" required>
+                        <div class="form-text">YYYY-MM 형식으로 입력</div>
+                        <div class="invalid-feedback">계약년월을 입력해주세요.</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100" 
+                            onclick="showLoading('apt-btn')" id="apt-btn">
+                        <i class="fas fa-search"></i> 실거래가 조회
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 지하철역 검색 -->
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-subway"></i> 지하철역 거리 검색</h5>
+            </div>
+            <div class="card-body">
+                <form id="subway-form" class="needs-validation" novalidate>
+                    <div class="mb-3">
+                        <label for="address" class="form-label">주소</label>
+                        <input type="text" class="form-control" id="address" name="address" 
+                               placeholder="예: 서울시 강남구 역삼동" required>
+                        <div class="invalid-feedback">주소를 입력해주세요.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="limit" class="form-label">조회할 역 개수</label>
+                        <select class="form-select" id="limit" name="limit">
+                            <option value="3">3개</option>
+                            <option value="5" selected>5개</option>
+                            <option value="10">10개</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-info w-100" 
+                            onclick="showLoading('subway-btn')" id="subway-btn">
+                        <i class="fas fa-search"></i> 지하철역 검색
+                    </button>
+                </form>
+                <div id="subway-result" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 편의시설 검색 -->
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-store"></i> 편의시설 검색</h5>
+            </div>
+            <div class="card-body">
+                <form id="facility-form" class="needs-validation" novalidate>
+                    <div class="mb-3">
+                        <label for="facility-address" class="form-label">주소</label>
+                        <input type="text" class="form-control" id="facility-address" name="address" 
+                               placeholder="예: 서울시 강남구 역삼동" required>
+                        <div class="invalid-feedback">주소를 입력해주세요.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="category" class="form-label">시설 카테고리</label>
+                        <select class="form-select" id="category" name="category">
+                            <option value="편의점">편의점</option>
+                            <option value="마트">마트/대형마트</option>
+                            <option value="병원">병원</option>
+                            <option value="약국">약국</option>
+                            <option value="학교">학교</option>
+                            <option value="공원">공원</option>
+                            <option value="음식점">음식점</option>
+                            <option value="카페">카페</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="radius" class="form-label">검색 반경 (미터)</label>
+                        <select class="form-select" id="radius" name="radius">
+                            <option value="500">500m</option>
+                            <option value="1000" selected>1km</option>
+                            <option value="1500">1.5km</option>
+                            <option value="2000">2km</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100" 
+                            onclick="showLoading('facility-btn')" id="facility-btn">
+                        <i class="fas fa-search"></i> 편의시설 검색
+                    </button>
+                </form>
+                <div id="facility-result" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 위치 점수 계산 -->
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="fas fa-calculator"></i> 위치 점수 계산</h5>
+            </div>
+            <div class="card-body">
+                <form id="score-form" class="needs-validation" novalidate>
+                    <div class="mb-3">
+                        <label for="subway_distance" class="form-label">지하철 거리 (km)</label>
+                        <input type="number" class="form-control" id="subway_distance" name="subway_distance" 
+                               step="0.1" min="0" max="10" placeholder="예: 0.8" required>
+                        <div class="invalid-feedback">지하철 거리를 입력해주세요.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="facilities_count" class="form-label">편의시설 개수</label>
+                        <input type="number" class="form-control" id="facilities_count" name="facilities_count" 
+                               min="0" max="100" placeholder="예: 25" required>
+                        <div class="invalid-feedback">편의시설 개수를 입력해주세요.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="park_distance" class="form-label">공원 거리 (km, 선택사항)</label>
+                        <input type="number" class="form-control" id="park_distance" name="park_distance" 
+                               step="0.1" min="0" max="5" placeholder="예: 0.5">
+                    </div>
+                    <button type="submit" class="btn btn-warning w-100" 
+                            onclick="showLoading('score-btn')" id="score-btn">
+                        <i class="fas fa-calculator"></i> 점수 계산
+                    </button>
+                </form>
+                <div id="score-result" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 결과 표시 영역 -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div id="result-area" class="d-none">
+            <div class="card shadow">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar"></i> 조회 결과</h5>
+                </div>
+                <div class="card-body" id="result-content">
+                    <!-- 결과가 여기에 동적으로 삽입됩니다 -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// AJAX 요청 공통 함수
+async function makeRequest(url, data) {
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('Request failed:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// 결과 표시 함수
+function showResult(title, data) {
+    const resultArea = document.getElementById('result-area');
+    const resultContent = document.getElementById('result-content');
+    
+    let html = `<h6><i class="fas fa-info-circle"></i> ${title}</h6>`;
+    
+    if (data.success) {
+        html += '<div class="alert alert-success">조회가 성공적으로 완료되었습니다.</div>';
+        html += '<pre class="bg-light p-3 rounded"><code>' + JSON.stringify(data.data, null, 2) + '</code></pre>';
+    } else {
+        html += '<div class="alert alert-danger">조회 중 오류가 발생했습니다: ' + data.error + '</div>';
+    }
+    
+    resultContent.innerHTML = html;
+    resultArea.classList.remove('d-none');
+    resultArea.scrollIntoView({ behavior: 'smooth' });
+}
+
+// 지하철역 검색 폼
+document.getElementById('subway-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const data = {
+        tool_name: 'find_nearest_subway_stations',
+        parameters: {
+            address: formData.get('address'),
+            limit: parseInt(formData.get('limit'))
+        }
+    };
+    
+    const result = await makeRequest('/web/api/mcp/test', data);
+    showResult('지하철역 검색 결과', result);
+});
+
+// 편의시설 검색 폼
+document.getElementById('facility-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const data = {
+        tool_name: 'find_nearby_facilities',
+        parameters: {
+            address: formData.get('address'),
+            category: formData.get('category'),
+            radius: parseInt(formData.get('radius'))
+        }
+    };
+    
+    const result = await makeRequest('/web/api/mcp/test', data);
+    showResult('편의시설 검색 결과', result);
+});
+
+// 위치 점수 계산 폼
+document.getElementById('score-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const data = {
+        tool_name: 'calculate_location_score',
+        parameters: {
+            subway_distance: parseFloat(formData.get('subway_distance')),
+            facilities_count: parseInt(formData.get('facilities_count')),
+            park_distance: formData.get('park_distance') ? parseFloat(formData.get('park_distance')) : null
+        }
+    };
+    
+    const result = await makeRequest('/web/api/mcp/test', data);
+    showResult('위치 점수 계산 결과', result);
+});
+
+// 계약년월 입력을 YYYYMM 형식으로 변환
+document.getElementById('deal_ymd').addEventListener('change', function(e) {
+    const value = e.target.value;
+    if (value) {
+        e.target.setAttribute('data-original', value);
+        // 폼 제출 시 YYYYMM 형식으로 변환
+        e.target.form.addEventListener('submit', function() {
+            const monthInput = document.getElementById('deal_ymd');
+            const dateValue = monthInput.value;
+            if (dateValue) {
+                monthInput.value = dateValue.replace('-', '');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

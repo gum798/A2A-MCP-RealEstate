@@ -1,0 +1,29 @@
+[project]
+name = "a2a-agent"
+version = "1.0.0"
+description = "Application-to-Application Agent for inter-service communication"
+authors = [
+    {name = "A2A Agent", email = "agent@example.com"}
+]
+dependencies = [
+    "fastapi>=0.104.1",
+    "uvicorn>=0.24.0",
+    "pydantic>=2.5.0",
+    "httpx>=0.25.2",
+    "python-dotenv>=1.0.0",
+    "pydantic-settings>=2.1.0",
+    "loguru>=0.7.2"
+]
+requires-python = ">=3.8"
+
+[project.scripts]
+start = "uvicorn app.main:app --host 0.0.0.0 --port 8000"
+dev = "uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]

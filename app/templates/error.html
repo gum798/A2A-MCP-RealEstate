@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}오류 발생{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="text-center mb-4">
+            <i class="fas fa-exclamation-triangle text-danger" style="font-size: 4rem;"></i>
+            <h2 class="mt-3 text-danger">오류가 발생했습니다</h2>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card shadow">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="fas fa-bug"></i> 오류 정보</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <strong>오류 메시지:</strong><br>
+                    {{ error }}
+                </div>
+                
+                <div class="mt-4">
+                    <h6><i class="fas fa-tools"></i> 해결 방법</h6>
+                    <ul>
+                        <li>페이지를 새로고침해 보세요</li>
+                        <li>입력 값을 확인해 보세요</li>
+                        <li>API 키가 올바르게 설정되었는지 확인해 보세요</li>
+                        <li>네트워크 연결을 확인해 보세요</li>
+                    </ul>
+                </div>
+                
+                <div class="mt-4">
+                    <h6><i class="fas fa-info-circle"></i> 필요한 설정</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>국토교통부 API 키</strong></p>
+                            <small class="text-muted">
+                                공공데이터포털에서 발급받은 API 키를<br>
+                                MOLIT_API_KEY 환경변수에 설정
+                            </small>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>카카오 API 키</strong></p>
+                            <small class="text-muted">
+                                카카오 개발자센터에서 발급받은 API 키를<br>
+                                KAKAO_API_KEY 환경변수에 설정
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <button class="btn btn-primary me-md-2" onclick="history.back()">
+                        <i class="fas fa-arrow-left"></i> 이전 페이지
+                    </button>
+                    <a href="/web/" class="btn btn-outline-secondary">
+                        <i class="fas fa-home"></i> 홈으로
+                    </a>
+                    <a href="/docs" class="btn btn-outline-info" target="_blank">
+                        <i class="fas fa-book"></i> API 문서
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-8 offset-md-2">
+        <div class="alert alert-info">
+            <h6><i class="fas fa-question-circle"></i> 도움이 필요하신가요?</h6>
+            <p class="mb-0">
+                시스템 사용법이나 API 키 설정에 대한 자세한 내용은 
+                <a href="/web/" class="alert-link">홈페이지</a>의 안내를 참고하시거나 
+                <a href="/docs" class="alert-link" target="_blank">API 문서</a>를 확인해 주세요.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

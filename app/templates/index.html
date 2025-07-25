@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}부동산 추천 시스템 - 홈{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="jumbotron bg-white p-5 rounded shadow-sm mb-4">
+            <div class="text-center">
+                <h1 class="display-4 text-primary">
+                    <i class="fas fa-home"></i> 부동산 추천 시스템
+                </h1>
+                <p class="lead">AI 기반 투자가치 & 삶의질 분석으로 최적의 부동산을 추천해드립니다</p>
+                <hr class="my-4">
+                <p>국토교통부 실거래가 데이터와 위치 기반 서비스를 활용한 종합 부동산 분석 플랫폼</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- MCP 서비스 카드 -->
+    <div class="col-md-6">
+        <div class="card h-100 card-hover shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-database"></i> MCP 데이터 서비스
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    FastMCP 기반의 부동산 데이터 조회 및 위치 분석 서비스를 테스트할 수 있습니다.
+                </p>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success"></i> 아파트/오피스텔 실거래가 조회</li>
+                    <li><i class="fas fa-check text-success"></i> 지하철역 거리 계산</li>
+                    <li><i class="fas fa-check text-success"></i> 주변 편의시설 검색</li>
+                    <li><i class="fas fa-check text-success"></i> 위치 점수 계산</li>
+                </ul>
+            </div>
+            <div class="card-footer">
+                <a href="/web/mcp" class="btn btn-info btn-lg w-100">
+                    <i class="fas fa-play"></i> MCP 테스트 시작
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agent 서비스 카드 -->
+    <div class="col-md-6">
+        <div class="card h-100 card-hover shadow">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-robot"></i> AI Agent 추천
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    AI Agent가 투자가치와 삶의질을 종합 분석하여 맞춤형 부동산을 추천합니다.
+                </p>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success"></i> 투자가치 평가 Agent</li>
+                    <li><i class="fas fa-check text-success"></i> 삶의질가치 평가 Agent</li>
+                    <li><i class="fas fa-check text-success"></i> 사용자 성향 맞춤 추천</li>
+                    <li><i class="fas fa-check text-success"></i> 종합 점수 및 등급 제공</li>
+                </ul>
+            </div>
+            <div class="card-footer">
+                <a href="/web/agent" class="btn btn-success btn-lg w-100">
+                    <i class="fas fa-play"></i> Agent 테스트 시작
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i> 시스템 구성
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-database text-info"></i> 데이터 레이어</h6>
+                        <ul class="list-unstyled small">
+                            <li>• 국토교통부 실거래가 API</li>
+                            <li>• 서울시 지하철역 좌표 데이터</li>
+                            <li>• 카카오 지도 API</li>
+                            <li>• 편의시설 위치 정보</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-cogs text-warning"></i> MCP 서비스</h6>
+                        <ul class="list-unstyled small">
+                            <li>• FastMCP 기반 서버</li>
+                            <li>• 실거래가 조회 도구</li>
+                            <li>• 위치 분석 도구</li>
+                            <li>• 거리 계산 알고리즘</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-robot text-success"></i> AI Agent</h6>
+                        <ul class="list-unstyled small">
+                            <li>• 투자가치 평가 알고리즘</li>
+                            <li>• 삶의질가치 평가 알고리즘</li>
+                            <li>• 사용자 성향 분석</li>
+                            <li>• 종합 추천 시스템</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-primary" role="alert">
+            <h6><i class="fas fa-lightbulb"></i> 사용 가이드</h6>
+            <p class="mb-0">
+                <strong>MCP 테스트:</strong> 실거래가 조회, 지하철역 검색 등 기본 데이터 조회 기능을 테스트합니다.<br>
+                <strong>Agent 테스트:</strong> 부동산 정보를 입력하면 AI가 투자가치와 삶의질을 분석하여 추천 결과를 제공합니다.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

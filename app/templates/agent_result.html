@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block title %}부동산 추천 결과{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-magic text-success"></i> 부동산 추천 결과</h2>
+            <a href="/web/agent" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> 돌아가기
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if result.success %}
+    {% set data = result.data %}
+    
+    <!-- 종합 추천 결과 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header {% if data.recommendation.recommended %}bg-success{% else %}bg-warning{% endif %} text-white">
+                    <h5 class="mb-0">
+                        <i class="fas {% if data.recommendation.recommended %}fa-thumbs-up{% else %}fa-clock{% endif %}"></i>
+                        {% if data.recommendation.recommended %}추천{% else %}보류{% endif %} 매물
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h6><i class="fas fa-home"></i> 부동산 정보</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>주소:</strong> {{ data.property_info.address }}</p>
+                                    <p><strong>유형:</strong> {{ data.property_info.property_type }}</p>
+                                    <p><strong>거래:</strong> {{ data.property_info.deal_type }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>가격:</strong> {{ data.property_info.price }}만원</p>
+                                    <p><strong>면적:</strong> {{ data.property_info.area }}㎡ ({{ "%.1f"|format(data.property_info.area / 3.3) }}평)</p>
+                                    <p><strong>층수:</strong> {{ data.property_info.floor }}층</p>
+                                    <p><strong>건축년도:</strong> {{ data.property_info.building_year }}년</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <h2 class="display-4 {% if data.evaluation.final_score >= 80 %}text-success{% elif data.evaluation.final_score >= 60 %}text-warning{% else %}text-danger{% endif %}">
+                                {{ data.evaluation.final_score }}점
+                            </h2>
+                            <h4>
+                                <span class="badge score-badge grade-{{ data.evaluation.final_grade.charAt(0) }}">
+                                    {{ data.evaluation.final_grade }}
+                                </span>
+                            </h4>
+                            <p class="mt-2"><strong>사용자 성향:</strong> {{ data.evaluation.user_preference }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 상세 평가 결과 -->
+    <div class="row mb-4">
+        <!-- 투자가치 평가 -->
+        <div class="col-md-6">
+            <div class="card shadow h-100">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="fas fa-chart-line"></i> 투자가치 평가</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <h3 class="text-info">{{ data.evaluation.investment_evaluation.total_score }}점</h3>
+                        <span class="badge score-badge grade-{{ data.evaluation.investment_evaluation.grade.charAt(0) }}">
+                            {{ data.evaluation.investment_evaluation.grade }}
+                        </span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6>세부 점수</h6>
+                        {% for key, score in data.evaluation.investment_evaluation.detail_scores.items() %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>
+                                    {% if key == 'price_score' %}가격{% elif key == 'area_score' %}면적{% elif key == 'floor_score' %}층수{% elif key == 'transport_score' %}교통{% else %}미래가치{% endif %}
+                                </span>
+                                <div class="d-flex align-items-center">
+                                    <div class="progress me-2" style="width: 100px; height: 8px;">
+                                        <div class="progress-bar bg-info" style="width: {{ score }}%"></div>
+                                    </div>
+                                    <span class="text-muted small">{{ score }}점</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    {% if data.evaluation.investment_evaluation.analysis %}
+                        <div class="mt-3">
+                            <h6>분석 정보</h6>
+                            <small class="text-muted">
+                                <div>평당 가격: {{ data.evaluation.investment_evaluation.analysis.price_per_pyeong }}만원</div>
+                                <div>면적(평): {{ data.evaluation.investment_evaluation.analysis.area_pyeong }}평</div>
+                                <div>층 비율: {{ data.evaluation.investment_evaluation.analysis.floor_rate }}</div>
+                                <div>건축 연수: {{ data.evaluation.investment_evaluation.analysis.building_age }}년</div>
+                            </small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 삶의질 평가 -->
+        <div class="col-md-6">
+            <div class="card shadow h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0"><i class="fas fa-heart"></i> 삶의질가치 평가</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <h3 class="text-warning">{{ data.evaluation.life_quality_evaluation.total_score }}점</h3>
+                        <span class="badge score-badge grade-{{ data.evaluation.life_quality_evaluation.grade.charAt(0) }}">
+                            {{ data.evaluation.life_quality_evaluation.grade }}
+                        </span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6>세부 점수</h6>
+                        {% for key, score in data.evaluation.life_quality_evaluation.detail_scores.items() %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>
+                                    {% if key == 'environment_score' %}환경{% elif key == 'convenience_score' %}편의성{% elif key == 'safety_score' %}안전{% elif key == 'education_score' %}교육{% else %}문화{% endif %}
+                                </span>
+                                <div class="d-flex align-items-center">
+                                    <div class="progress me-2" style="width: 100px; height: 8px;">
+                                        <div class="progress-bar bg-warning" style="width: {{ score }}%"></div>
+                                    </div>
+                                    <span class="text-muted small">{{ score }}점</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 위치 분석 -->
+    {% if data.evaluation.investment_evaluation.location_data %}
+        {% set location = data.evaluation.investment_evaluation.location_data %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header bg-secondary text-white">
+                        <h6 class="mb-0"><i class="fas fa-map-marker-alt"></i> 위치 분석 정보</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <h6>교통 정보</h6>
+                                <p><strong>가장 가까운 역:</strong> {{ location.nearest_stations[0].station_name }}</p>
+                                <p><strong>거리:</strong> {{ location.nearest_stations[0].distance_km }}km ({{ location.nearest_stations[0].distance_m }}m)</p>
+                                <p><strong>노선:</strong> {{ location.nearest_stations[0].lines | join(', ') }}</p>
+                                
+                                <h6 class="mt-3">주변 지하철역</h6>
+                                {% for station in location.nearest_stations[1:4] %}
+                                    <small>{{ station.station_name }} ({{ station.distance_km }}km)</small><br>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-4">
+                                <h6>편의시설</h6>
+                                <p><strong>반경 1km 내:</strong> {{ location.facilities_count }}개</p>
+                                
+                                <h6 class="mt-3">환경 정보</h6>
+                                <p><strong>공원 거리:</strong> {{ location.park_distance }}km</p>
+                            </div>
+                            <div class="col-md-4">
+                                <h6>위치 점수</h6>
+                                <div class="text-center">
+                                    <h4 class="text-primary">{{ location.location_score.total_score }}점</h4>
+                                    <span class="badge score-badge grade-{{ location.location_score.grade.charAt(0) }}">
+                                        {{ location.location_score.grade }}
+                                    </span>
+                                </div>
+                                <div class="mt-3">
+                                    <small>
+                                        교통: {{ location.location_score.detail_scores.transport }}점<br>
+                                        편의성: {{ location.location_score.detail_scores.convenience }}점<br>
+                                        환경: {{ location.location_score.detail_scores.environment }}점
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- 장단점 분석 -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card shadow h-100">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="fas fa-thumbs-up"></i> 장점</h6>
+                </div>
+                <div class="card-body">
+                    {% if data.recommendation.pros %}
+                        <ul class="list-unstyled">
+                            {% for pro in data.recommendation.pros %}
+                                <li><i class="fas fa-check text-success"></i> {{ pro }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">특별한 장점이 없습니다.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow h-100">
+                <div class="card-header bg-danger text-white">
+                    <h6 class="mb-0"><i class="fas fa-thumbs-down"></i> 단점</h6>
+                </div>
+                <div class="card-body">
+                    {% if data.recommendation.cons %}
+                        <ul class="list-unstyled">
+                            {% for con in data.recommendation.cons %}
+                                <li><i class="fas fa-times text-danger"></i> {{ con }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">특별한 단점이 없습니다.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 추천 사유 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert {% if data.recommendation.recommended %}alert-success{% else %}alert-warning{% endif %}">
+                <h6><i class="fas fa-lightbulb"></i> 추천 사유</h6>
+                <p class="mb-0">{{ data.recommendation.reason }}</p>
+            </div>
+        </div>
+    </div>
+
+{% else %}
+    <div class="alert alert-danger">
+        <i class="fas fa-exclamation-circle"></i> 
+        <strong>오류 발생:</strong> {{ result.error or result.message }}
+    </div>
+    
+    <div class="card shadow">
+        <div class="card-header bg-danger text-white">
+            <h6 class="mb-0">오류 상세 정보</h6>
+        </div>
+        <div class="card-body">
+            <pre class="bg-light p-3 rounded"><code>{{ result | tojson(indent=2) }}</code></pre>
+        </div>
+    </div>
+{% endif %}
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+            <a href="/web/agent" class="btn btn-primary me-md-2">
+                <i class="fas fa-search"></i> 다른 매물 분석
+            </a>
+            <a href="/web/" class="btn btn-outline-secondary">
+                <i class="fas fa-home"></i> 홈으로
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

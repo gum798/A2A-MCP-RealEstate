@@ -1,0 +1,422 @@
+{% extends "base.html" %}
+
+{% block title %}Agent 기능 테스트{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-robot text-success"></i> AI Agent 기능 테스트</h2>
+            <a href="/web/" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> 홈으로
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- 부동산 정보 입력 -->
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-home"></i> 부동산 정보 입력</h5>
+            </div>
+            <div class="card-body">
+                <form action="/web/agent/recommend" method="post" class="needs-validation" novalidate>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="address" class="form-label">주소</label>
+                                <input type="text" class="form-control" id="address" name="address" 
+                                       placeholder="예: 서울시 강남구 역삼동" required>
+                                <div class="invalid-feedback">주소를 입력해주세요.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="property_type" class="form-label">부동산 유형</label>
+                                <select class="form-select" id="property_type" name="property_type" required>
+                                    <option value="">선택하세요</option>
+                                    <option value="아파트">아파트</option>
+                                    <option value="오피스텔">오피스텔</option>
+                                    <option value="연립다세대">연립다세대</option>
+                                    <option value="단독주택">단독주택</option>
+                                </select>
+                                <div class="invalid-feedback">부동산 유형을 선택해주세요.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="deal_type" class="form-label">거래 유형</label>
+                                <select class="form-select" id="deal_type" name="deal_type" required>
+                                    <option value="">선택하세요</option>
+                                    <option value="매매">매매</option>
+                                    <option value="전세">전세</option>
+                                    <option value="월세">월세</option>
+                                </select>
+                                <div class="invalid-feedback">거래 유형을 선택해주세요.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="price" class="form-label">가격 (만원)</label>
+                                <input type="number" class="form-control" id="price" name="price" 
+                                       min="1000" max="1000000" placeholder="예: 80000" required>
+                                <div class="form-text">매매가 또는 전세가를 만원 단위로 입력</div>
+                                <div class="invalid-feedback">가격을 입력해주세요.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="area" class="form-label">전용면적 (㎡)</label>
+                                <input type="number" class="form-control" id="area" name="area" 
+                                       step="0.01" min="10" max="500" placeholder="예: 84.32" required>
+                                <div class="invalid-feedback">전용면적을 입력해주세요.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="floor" class="form-label">층수</label>
+                                <input type="number" class="form-control" id="floor" name="floor" 
+                                       min="1" max="100" placeholder="예: 15" required>
+                                <div class="invalid-feedback">층수를 입력해주세요.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="total_floor" class="form-label">총 층수</label>
+                                <input type="number" class="form-control" id="total_floor" name="total_floor" 
+                                       min="1" max="100" placeholder="예: 25" required>
+                                <div class="invalid-feedback">총 층수를 입력해주세요.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="building_year" class="form-label">건축년도</label>
+                                <input type="number" class="form-control" id="building_year" name="building_year" 
+                                       min="1950" max="2025" placeholder="예: 2010" required>
+                                <div class="invalid-feedback">건축년도를 입력해주세요.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="user_preference" class="form-label">사용자 성향</label>
+                                <select class="form-select" id="user_preference" name="user_preference" required>
+                                    <option value="">선택하세요</option>
+                                    <option value="투자">투자 중심 (수익성, 유동성)</option>
+                                    <option value="삶의질">삶의질 중심 (편의성, 환경)</option>
+                                    <option value="균형" selected>균형 (투자+삶의질)</option>
+                                </select>
+                                <div class="invalid-feedback">사용자 성향을 선택해주세요.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-success btn-lg me-md-2" 
+                                onclick="showLoading('recommend-btn')" id="recommend-btn">
+                            <i class="fas fa-magic"></i> 종합 추천 받기
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 개별 분석 -->
+    <div class="col-lg-4">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="fas fa-chart-line"></i> 투자가치 분석</h6>
+            </div>
+            <div class="card-body">
+                <p class="card-text small">투자 관점에서 부동산의 가치를 분석합니다.</p>
+                <button type="button" class="btn btn-info btn-sm w-100" onclick="analyzeInvestment()">
+                    <i class="fas fa-calculator"></i> 투자가치 분석
+                </button>
+            </div>
+        </div>
+
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0"><i class="fas fa-heart"></i> 삶의질 분석</h6>
+            </div>
+            <div class="card-body">
+                <p class="card-text small">거주 환경 관점에서 삶의질을 분석합니다.</p>
+                <button type="button" class="btn btn-warning btn-sm w-100" onclick="analyzeLifeQuality()">
+                    <i class="fas fa-leaf"></i> 삶의질 분석
+                </button>
+            </div>
+        </div>
+
+        <!-- 빠른 입력 -->
+        <div class="card shadow mt-4">
+            <div class="card-header bg-secondary text-white">
+                <h6 class="mb-0"><i class="fas fa-bolt"></i> 빠른 입력</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="fillSampleData('gangnam')">
+                        강남 아파트 예시
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="fillSampleData('officetel')">
+                        오피스텔 예시
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="fillSampleData('villa')">
+                        연립다세대 예시
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 분석 결과 영역 -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div id="analysis-result" class="d-none">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar"></i> 분석 결과</h5>
+                </div>
+                <div class="card-body" id="analysis-content">
+                    <!-- 분석 결과가 여기에 동적으로 삽입됩니다 -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 폼 데이터 수집 함수
+function getFormData() {
+    const form = document.querySelector('form');
+    const formData = new FormData(form);
+    return {
+        address: formData.get('address'),
+        price: parseInt(formData.get('price')) || 0,
+        area: parseFloat(formData.get('area')) || 0,
+        floor: parseInt(formData.get('floor')) || 0,
+        total_floor: parseInt(formData.get('total_floor')) || 0,
+        building_year: parseInt(formData.get('building_year')) || 0,
+        property_type: formData.get('property_type'),
+        deal_type: formData.get('deal_type'),
+        user_preference: formData.get('user_preference') || '균형'
+    };
+}
+
+// 투자가치 분석
+async function analyzeInvestment() {
+    const data = getFormData();
+    
+    if (!data.address || !data.price || !data.area) {
+        alert('기본 정보(주소, 가격, 면적)를 먼저 입력해주세요.');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/web/api/agent/investment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        showAnalysisResult('투자가치 분석 결과', result);
+    } catch (error) {
+        console.error('Analysis failed:', error);
+        alert('분석 중 오류가 발생했습니다.');
+    }
+}
+
+// 삶의질 분석
+async function analyzeLifeQuality() {
+    const data = getFormData();
+    
+    if (!data.address || !data.area) {
+        alert('기본 정보(주소, 면적)를 먼저 입력해주세요.');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/web/api/agent/life-quality', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        showAnalysisResult('삶의질 분석 결과', result);
+    } catch (error) {
+        console.error('Analysis failed:', error);
+        alert('분석 중 오류가 발생했습니다.');
+    }
+}
+
+// 분석 결과 표시
+function showAnalysisResult(title, result) {
+    const resultArea = document.getElementById('analysis-result');
+    const resultContent = document.getElementById('analysis-content');
+    
+    let html = `<h6><i class="fas fa-info-circle"></i> ${title}</h6>`;
+    
+    if (result.success) {
+        html += '<div class="alert alert-success">분석이 성공적으로 완료되었습니다.</div>';
+        
+        // 결과 데이터 포맷팅
+        if (result.data.investment_score) {
+            const score = result.data.investment_score;
+            html += `
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card border-info">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0">투자가치 종합 점수</h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <h2 class="text-info">${score.total_score}점</h2>
+                                <span class="badge score-badge grade-${score.grade.charAt(0)}">${score.grade}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-secondary">
+                            <div class="card-header">세부 점수</div>
+                            <div class="card-body">
+                                <div class="mb-2">가격: ${score.price_score}점</div>
+                                <div class="mb-2">면적: ${score.area_score}점</div>
+                                <div class="mb-2">층수: ${score.floor_score}점</div>
+                                <div class="mb-2">교통: ${score.transport_score}점</div>
+                                <div class="mb-0">발전가능성: ${score.future_potential_score}점</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        if (result.data.life_quality_score) {
+            const score = result.data.life_quality_score;
+            html += `
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="card border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="mb-0">삶의질 종합 점수</h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <h2 class="text-warning">${score.total_score}점</h2>
+                                <span class="badge score-badge grade-${score.grade.charAt(0)}">${score.grade}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-secondary">
+                            <div class="card-header">세부 점수</div>
+                            <div class="card-body">
+                                <div class="mb-2">환경: ${score.environment_score}점</div>
+                                <div class="mb-2">편의성: ${score.convenience_score}점</div>
+                                <div class="mb-2">안전: ${score.safety_score}점</div>
+                                <div class="mb-2">교육: ${score.education_score}점</div>
+                                <div class="mb-0">문화: ${score.culture_score}점</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+    } else {
+        html += '<div class="alert alert-danger">분석 중 오류가 발생했습니다: ' + (result.error || 'Unknown error') + '</div>';
+    }
+    
+    resultContent.innerHTML = html;
+    resultArea.classList.remove('d-none');
+    resultArea.scrollIntoView({ behavior: 'smooth' });
+}
+
+// 샘플 데이터 입력
+function fillSampleData(type) {
+    const samples = {
+        gangnam: {
+            address: '서울시 강남구 역삼동',
+            property_type: '아파트',
+            deal_type: '매매',
+            price: 180000,
+            area: 84.32,
+            floor: 15,
+            total_floor: 25,
+            building_year: 2010
+        },
+        officetel: {
+            address: '서울시 강남구 테헤란로',
+            property_type: '오피스텔',
+            deal_type: '전세',
+            price: 45000,
+            area: 33.12,
+            floor: 12,
+            total_floor: 20,
+            building_year: 2018
+        },
+        villa: {
+            address: '서울시 마포구 연남동',
+            property_type: '연립다세대',
+            deal_type: '매매',
+            price: 95000,
+            area: 76.24,
+            floor: 3,
+            total_floor: 4,
+            building_year: 2005
+        }
+    };
+    
+    const sample = samples[type];
+    if (sample) {
+        Object.keys(sample).forEach(key => {
+            const element = document.getElementById(key);
+            if (element) {
+                element.value = sample[key];
+            }
+        });
+    }
+}
+
+// 층수 유효성 검사
+document.getElementById('floor').addEventListener('input', function() {
+    const floor = parseInt(this.value);
+    const totalFloor = parseInt(document.getElementById('total_floor').value);
+    
+    if (totalFloor && floor > totalFloor) {
+        this.setCustomValidity('층수는 총 층수보다 클 수 없습니다.');
+    } else {
+        this.setCustomValidity('');
+    }
+});
+
+document.getElementById('total_floor').addEventListener('input', function() {
+    const totalFloor = parseInt(this.value);
+    const floor = parseInt(document.getElementById('floor').value);
+    
+    if (floor && floor > totalFloor) {
+        document.getElementById('floor').setCustomValidity('층수는 총 층수보다 클 수 없습니다.');
+    } else {
+        document.getElementById('floor').setCustomValidity('');
+    }
+});
+</script>
+{% endblock %}
