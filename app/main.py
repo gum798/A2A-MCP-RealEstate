@@ -11,6 +11,7 @@ import os
 from app.routes import agent_routes, data_routes, ai_routes, mcp_routes, web_routes, review_routes
 from app.utils.config import settings
 from app.utils.logger import logger
+from app.utils.fastmcp_client import cleanup_mcp_clients
 
 
 @asynccontextmanager
@@ -22,6 +23,8 @@ async def lifespan(app: FastAPI):
     logger.info(f"Port: {settings.port}")
     yield
     logger.info("Shutting down A2A Agent Server")
+    # MCP 클라이언트들 정리
+    await cleanup_mcp_clients()
 
 
 # FastAPI 앱 생성

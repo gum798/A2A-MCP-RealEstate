@@ -138,24 +138,22 @@ real_estate_client = MCPClient("app.mcp.real_estate_recommendation_mcp")
 location_client = MCPClient("app.mcp.location_service")
 
 async def call_real_estate_tool(tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
-    """부동산 MCP 도구 호출 (직접 함수 호출 방식)"""
+    """부동산 MCP 도구 호출 (구현 함수 직접 호출)"""
     try:
-        # 도구별 직접 함수 호출
+        # 구현 함수들을 직접 import하여 호출
+        from ..mcp import real_estate_recommendation_mcp as mcp_module
+        
+        # 도구별 구현 함수 호출
         if tool_name == "get_real_estate_data":
-            from ..mcp.real_estate_recommendation_mcp import get_real_estate_data
-            result = await get_real_estate_data(**arguments)
+            result = await mcp_module.get_real_estate_data_impl(**arguments)
         elif tool_name == "analyze_location":
-            from ..mcp.real_estate_recommendation_mcp import analyze_location
-            result = await analyze_location(**arguments)
+            result = await mcp_module.analyze_location_impl(**arguments)
         elif tool_name == "evaluate_investment_value":
-            from ..mcp.real_estate_recommendation_mcp import evaluate_investment_value
-            result = await evaluate_investment_value(**arguments)
+            result = await mcp_module.evaluate_investment_value_impl(**arguments)
         elif tool_name == "evaluate_life_quality":
-            from ..mcp.real_estate_recommendation_mcp import evaluate_life_quality
-            result = await evaluate_life_quality(**arguments)
+            result = await mcp_module.evaluate_life_quality_impl(**arguments)
         elif tool_name == "recommend_property":
-            from ..mcp.real_estate_recommendation_mcp import recommend_property
-            result = await recommend_property(**arguments)
+            result = await mcp_module.recommend_property_impl(**arguments)
         else:
             return {"success": False, "error": f"도구 '{tool_name}'을 찾을 수 없습니다"}
             

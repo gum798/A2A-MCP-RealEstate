@@ -22,6 +22,7 @@ mcp = FastMCP("Location Service API")
 SEOUL_API_KEY = os.getenv("SEOUL_API_KEY", "")  # 서울시 공공데이터 API 키
 NAVER_CLIENT_ID = os.getenv("NAVER_CLIENT_ID", "")  # 네이버 클라이언트 ID
 NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET", "")  # 네이버 클라이언트 시크릿
+TOPIS_API_KEY = os.getenv("TOPIS_API_KEY", "")  # TOPIS 교통정보 API 키
 
 def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """
@@ -115,8 +116,9 @@ async def find_nearest_subway_stations(address: str, lat: float = None, lon: flo
                     "message": "address 또는 lat, lon 파라미터를 제공해주세요"
                 }
             
-            # 카카오 API로 주소를 좌표로 변환
-            coord_result = await address_to_coordinates(address)
+            # 네이버 API로 주소를 좌표로 변환 (MCP 도구에서 원본 함수 호출)
+            tool = await mcp.get_tool("address_to_coordinates")
+            coord_result = await tool.fn(address)
             if not coord_result["success"]:
                 return coord_result
             
@@ -191,7 +193,12 @@ async def address_to_coordinates(address: str) -> Dict[str, Any]:
         }
         params = {"query": address}
         
-        async with httpx.AsyncClient() as client:
+        # 로컬 디버깅용 URL 로깅
+        if os.getenv("ENVIRONMENT", "production") == "development":
+            print(f"[DEBUG] API 호출 URL: {url}")
+            print(f"[DEBUG] 파라미터: {params}")
+            
+        async with httpx.AsyncClient(verify=False) as client:
             response = await client.get(url, headers=headers, params=params)
             response.raise_for_status()
             
@@ -285,7 +292,12 @@ async def find_nearby_facilities(lat: float, lon: float, category: str = "편의
             "sort": "distance"
         }
         
-        async with httpx.AsyncClient() as client:
+        # 로컬 디버깅용 URL 로깅
+        if os.getenv("ENVIRONMENT", "production") == "development":
+            print(f"[DEBUG] API 호출 URL: {url}")
+            print(f"[DEBUG] 파라미터: {params}")
+            
+        async with httpx.AsyncClient(verify=False) as client:
             response = await client.get(url, headers=headers, params=params)
             response.raise_for_status()
             
@@ -331,7 +343,7 @@ async def find_nearby_facilities(lat: float, lon: float, category: str = "편의
         }
 
 @mcp.tool()
-def calculate_location_score(subway_distance: float, facilities_count: int, park_distance: float = None) -> Dict[str, Any]:
+async def calculate_location_score(subway_distance: float, facilities_count: int, park_distance: float = None) -> Dict[str, Any]:
     """
     위치 점수 계산 (교통편, 편의성 등을 종합)
     
@@ -430,6 +442,323 @@ def calculate_location_score(subway_distance: float, facilities_count: int, park
             "success": False,
             "error": str(e),
             "message": "위치 점수 계산 중 오류가 발생했습니다"
+        }
+
+@mcp.tool()
+async def get_realtime_traffic_info(start_lat: float, start_lon: float, end_lat: float, end_lon: float, transport_type: str = "transit") -> Dict[str, Any]:
+    """
+    실시간 교통 정보 조회 (TOPIS API)
+    
+    Args:
+        start_lat: 출발지 위도
+        start_lon: 출발지 경도
+        end_lat: 도착지 위도
+        end_lon: 도착지 경도
+        transport_type: 교통수단 (transit: 대중교통, driving: 자동차, walking: 도보)
+    
+    Returns:
+        실시간 교통 정보 (소요시간, 경로, 요금 등)
+    """
+    try:
+        # 도보 경로는 API 키 없이도 계산 가능
+        if transport_type == "walking":
+            distance = calculate_distance(start_lat, start_lon, end_lat, end_lon)
+            walking_time = int(distance / 4.5 * 60)  # 4.5km/h 도보 속도, distance는 이미 km
+            
+            return {
+                "success": True,
+                "data": {
+                    "transport_type": "walking",
+                    "distance_km": distance,
+                    "duration_minutes": walking_time,
+                    "route_summary": f"도보 {distance}km, 약 {walking_time}분 소요",
+                    "paths": [
+                        {
+                            "type": "walking",
+                            "distance": distance * 1000,
+                            "duration": walking_time,
+                            "start_location": {"lat": start_lat, "lon": start_lon},
+                            "end_location": {"lat": end_lat, "lon": end_lon}
+                        }
+                    ]
+                },
+                "message": f"도보 경로 안내: {distance}km, {walking_time}분"
+            }
+        
+        # TOPIS API가 필요한 경우 API 키 확인
+        if not TOPIS_API_KEY:
+            # API 키가 없으면 mock 데이터 반환
+            distance = calculate_distance(start_lat, start_lon, end_lat, end_lon)
+            
+            if transport_type == "transit":
+                estimated_time = int(distance * 30)  # 대중교통 평균 30분/km
+                return {
+                    "success": True,
+                    "data": {
+                        "transport_type": "transit",
+                        "routes": [
+                            {
+                                "total_time": f"{estimated_time}분",
+                                "total_distance": f"{distance:.1f}km",
+                                "fare": "1370원",
+                                "transfer_count": "1",
+                                "route_type": "지하철+버스"
+                            }
+                        ],
+                        "mock_data": True,
+                        "query_time": datetime.now().isoformat()
+                    },
+                    "message": f"예상 대중교통 시간: {estimated_time}분 (실제 API 연동 필요)"
+                }
+            elif transport_type == "driving":
+                estimated_time = int(distance * 15)  # 자동차 평균 15분/km
+                return {
+                    "success": True,
+                    "data": {
+                        "transport_type": "driving",
+                        "total_time_minutes": estimated_time,
+                        "total_distance_km": distance,
+                        "toll_fee": int(distance * 500),  # 예상 통행료
+                        "traffic_condition": "평균 교통량 기준",
+                        "mock_data": True,
+                        "query_time": datetime.now().isoformat()
+                    },
+                    "message": f"예상 자동차 시간: {estimated_time}분 (실제 API 연동 필요)"
+                }
+        
+        # TOPIS API 엔드포인트 (예시 - 실제 API 문서 확인 필요)
+        base_url = "http://openapi.topis.co.kr/openapi/service"
+        
+        if transport_type == "transit":
+            # 대중교통 경로 검색
+            url = f"{base_url}/transitRoute"
+            params = {
+                "serviceKey": TOPIS_API_KEY,
+                "startX": start_lon,
+                "startY": start_lat,
+                "endX": end_lon,
+                "endY": end_lat,
+                "reqDttm": datetime.now().strftime("%Y%m%d%H%M%S"),
+                "numOfRows": 5,
+                "pageNo": 1
+            }
+        elif transport_type == "driving":
+            # 자동차 경로 검색
+            url = f"{base_url}/drivingRoute"
+            params = {
+                "serviceKey": TOPIS_API_KEY,
+                "startX": start_lon,
+                "startY": start_lat,
+                "endX": end_lon,
+                "endY": end_lat,
+                "reqDttm": datetime.now().strftime("%Y%m%d%H%M%S"),
+                "option": "trafast"  # 교통량 고려 최단시간
+            }
+        
+        # 로컬 디버깅용 URL 로깅
+        if os.getenv("ENVIRONMENT", "production") == "development":
+            print(f"[DEBUG] TOPIS API 호출 URL: {url}")
+            print(f"[DEBUG] 파라미터: {params}")
+            
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, params=params)
+            response.raise_for_status()
+            
+            # XML 응답을 JSON으로 파싱 (TOPIS API는 XML 응답)
+            import xml.etree.ElementTree as ET
+            
+            root = ET.fromstring(response.text)
+            
+            # 응답 파싱 (실제 TOPIS API 응답 구조에 맞게 수정 필요)
+            if transport_type == "transit":
+                routes = []
+                for item in root.findall(".//item"):
+                    route_info = {
+                        "total_time": item.find("totalTime").text if item.find("totalTime") is not None else "N/A",
+                        "total_distance": item.find("totalDistance").text if item.find("totalDistance") is not None else "N/A",
+                        "fare": item.find("fare").text if item.find("fare") is not None else "N/A",
+                        "transfer_count": item.find("transferCount").text if item.find("transferCount") is not None else "0",
+                        "route_type": "대중교통"
+                    }
+                    routes.append(route_info)
+                
+                return {
+                    "success": True,
+                    "data": {
+                        "transport_type": "transit",
+                        "routes": routes[:3],  # 상위 3개 경로
+                        "query_time": datetime.now().isoformat(),
+                        "start_location": {"lat": start_lat, "lon": start_lon},
+                        "end_location": {"lat": end_lat, "lon": end_lon}
+                    },
+                    "message": f"대중교통 경로 {len(routes)}개를 찾았습니다"
+                }
+            
+            elif transport_type == "driving":
+                # 자동차 경로 파싱
+                total_time = root.find(".//totalTime")
+                total_distance = root.find(".//totalDistance")
+                toll_fee = root.find(".//tollFee")
+                
+                return {
+                    "success": True,
+                    "data": {
+                        "transport_type": "driving",
+                        "total_time_minutes": int(total_time.text) if total_time is not None else 0,
+                        "total_distance_km": float(total_distance.text) / 1000 if total_distance is not None else 0,
+                        "toll_fee": int(toll_fee.text) if toll_fee is not None else 0,
+                        "traffic_condition": "실시간 교통량 반영",
+                        "query_time": datetime.now().isoformat(),
+                        "start_location": {"lat": start_lat, "lon": start_lon},
+                        "end_location": {"lat": end_lat, "lon": end_lon}
+                    },
+                    "message": "자동차 경로 안내가 완료되었습니다"
+                }
+            
+    except Exception as e:
+        # API 키가 없거나 API 호출 실패 시 mock 데이터 반환
+        distance = calculate_distance(start_lat, start_lon, end_lat, end_lon)
+        
+        if transport_type == "transit":
+            estimated_time = int(distance * 30)  # 대중교통 평균 30분/km
+            return {
+                "success": True,
+                "data": {
+                    "transport_type": "transit",
+                    "routes": [
+                        {
+                            "total_time": f"{estimated_time}분",
+                            "total_distance": f"{distance:.1f}km",
+                            "fare": "1370원",
+                            "transfer_count": "1",
+                            "route_type": "지하철+버스"
+                        }
+                    ],
+                    "mock_data": True,
+                    "query_time": datetime.now().isoformat()
+                },
+                "message": f"예상 대중교통 시간: {estimated_time}분 (실제 API 연동 필요)"
+            }
+        elif transport_type == "driving":
+            estimated_time = int(distance * 15)  # 자동차 평균 15분/km
+            return {
+                "success": True,
+                "data": {
+                    "transport_type": "driving",
+                    "total_time_minutes": estimated_time,
+                    "total_distance_km": distance,
+                    "toll_fee": int(distance * 500),  # 예상 통행료
+                    "traffic_condition": "평균 교통량 기준",
+                    "mock_data": True,
+                    "query_time": datetime.now().isoformat()
+                },
+                "message": f"예상 자동차 시간: {estimated_time}분 (실제 API 연동 필요)"
+            }
+        
+        # 실제 오류인 경우
+        return {
+            "success": False,
+            "error": str(e),
+            "message": "실시간 교통 정보 조회 중 오류가 발생했습니다"
+        }
+
+@mcp.tool()
+async def get_subway_realtime_arrival(station_name: str) -> Dict[str, Any]:
+    """
+    지하철 실시간 도착 정보 조회
+    
+    Args:
+        station_name: 지하철역명 (예: "강남역", "역삼역")
+    
+    Returns:
+        실시간 지하철 도착 정보
+    """
+    try:
+        # API 키가 없으면 mock 데이터 반환
+        if not SEOUL_API_KEY:
+            raise Exception("API 키 없음")
+            
+        # 서울시 지하철 실시간 도착정보 API
+        url = "http://swopenapi.seoul.go.kr/api/subway"
+        params = {
+            "key": SEOUL_API_KEY,
+            "type": "json",
+            "service": "realtimeArrival",
+            "station_name": station_name
+        }
+        
+        # 로컬 디버깅용 URL 로깅
+        api_url = f"{url}/{SEOUL_API_KEY}/json/realtimeArrival/1/10/{station_name}"
+        if os.getenv("ENVIRONMENT", "production") == "development":
+            print(f"[DEBUG] 서울시 지하철 API 호출 URL: {api_url}")
+            
+        async with httpx.AsyncClient() as client:
+            response = await client.get(api_url)
+            response.raise_for_status()
+            
+            data = response.json()
+            
+            if data.get("realtimeArrival"):
+                arrivals = []
+                for arrival in data["realtimeArrival"]:
+                    arrival_info = {
+                        "line": arrival.get("subwayId", "").replace("1", "1호선").replace("2", "2호선").replace("3", "3호선").replace("4", "4호선"),
+                        "direction": arrival.get("trainLineNm", ""),
+                        "arrival_message": arrival.get("arvlMsg2", ""),
+                        "arrival_code": arrival.get("arvlCd", ""),
+                        "current_station": arrival.get("lstcarAt", ""),
+                        "train_express": arrival.get("btrainSttus", "")
+                    }
+                    arrivals.append(arrival_info)
+                
+                return {
+                    "success": True,
+                    "data": {
+                        "station_name": station_name,
+                        "arrivals": arrivals,
+                        "update_time": datetime.now().isoformat(),
+                        "total_count": len(arrivals)
+                    },
+                    "message": f"{station_name} 실시간 도착정보를 조회했습니다"
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": "실시간 도착정보가 없습니다",
+                    "message": f"{station_name}의 실시간 정보를 찾을 수 없습니다"
+                }
+    
+    except Exception as e:
+        # Mock 데이터 반환
+        mock_arrivals = [
+            {
+                "line": "2호선",
+                "direction": "강남방면",
+                "arrival_message": "2분 후 도착",
+                "arrival_code": "2",
+                "current_station": "선릉역",
+                "train_express": "일반"
+            },
+            {
+                "line": "2호선", 
+                "direction": "을지로입구방면",
+                "arrival_message": "5분 후 도착",
+                "arrival_code": "5",
+                "current_station": "삼성역",
+                "train_express": "일반"
+            }
+        ]
+        
+        return {
+            "success": True,
+            "data": {
+                "station_name": station_name,
+                "arrivals": mock_arrivals,
+                "mock_data": True,
+                "update_time": datetime.now().isoformat(),
+                "total_count": len(mock_arrivals)
+            },
+            "message": f"{station_name} 실시간 도착정보 (예시 데이터, 실제 API 연동 필요)"
         }
 
 # 리소스 정의

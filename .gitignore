@@ -35,3 +35,6 @@ htmlcov/
 
 # Pytest
 .pytest_cache/
+
+# Examples (contains test data)
+examples/

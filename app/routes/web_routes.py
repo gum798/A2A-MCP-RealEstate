@@ -12,7 +12,16 @@ import json
 from datetime import datetime
 
 from ..utils.logger import logger
-from ..utils.mcp_client import call_real_estate_tool, call_location_tool
+from ..utils.fastmcp_client import (
+    call_real_estate_mcp_tool,
+    get_real_estate_resources,
+    read_real_estate_resource,
+    get_real_estate_tools,
+    call_location_mcp_tool,
+    get_location_tools,
+    get_location_resources,
+    read_location_resource
+)
 
 router = APIRouter(prefix="/web", tags=["web"])
 templates = Jinja2Templates(directory="app/templates")
@@ -73,12 +82,12 @@ async def test_mcp_tool(request: MCPTestRequest):
     """MCP 도구 테스트"""
     try:
         # 실제 MCP 서버 호출
-        if request.tool_name in ["get_real_estate_data", "analyze_location", "evaluate_investment_value", "evaluate_life_quality", "recommend_property"]:
-            # 부동산 MCP 서버 호출
-            result = await call_real_estate_tool(request.tool_name, request.parameters)
-        elif request.tool_name in ["find_nearest_subway_stations", "address_to_coordinates", "find_nearby_facilities", "calculate_location_score"]:
-            # 위치 MCP 서버 호출
-            result = await call_location_tool(request.tool_name, request.parameters)
+        if request.tool_name in ["get_real_estate_data", "analyze_location", "evaluate_investment_value", "evaluate_life_quality", "recommend_property", "get_regional_price_statistics", "compare_similar_properties"]:
+            # 부동산 MCP 서버 호출 (진정한 MCP 프로토콜)
+            result = await call_real_estate_mcp_tool(request.tool_name, request.parameters)
+        elif request.tool_name in ["find_nearest_subway_stations", "address_to_coordinates", "find_nearby_facilities", "calculate_location_score", "get_realtime_traffic_info", "get_subway_realtime_arrival"]:
+            # 위치 MCP 서버 호출 (진정한 MCP 프로토콜)
+            result = await call_location_mcp_tool(request.tool_name, request.parameters)
         else:
             result = {
                 "success": False,
@@ -110,7 +119,7 @@ async def recommend_property(request: AgentTestRequest):
             "user_preference": request.user_preference
         }
         
-        result = await call_real_estate_tool("recommend_property", arguments)
+        result = await call_real_estate_mcp_tool("recommend_property", arguments)
         
         return {
             "success": result.get("success", False),
@@ -138,7 +147,7 @@ async def evaluate_investment(request: AgentTestRequest):
             "deal_type": request.deal_type
         }
         
-        result = await call_real_estate_tool("evaluate_investment_value", arguments)
+        result = await call_real_estate_mcp_tool("evaluate_investment_value", arguments)
         
         return {
             "success": result.get("success", False),
@@ -166,7 +175,7 @@ async def evaluate_life_quality(request: AgentTestRequest):
             "deal_type": request.deal_type
         }
         
-        result = await call_real_estate_tool("evaluate_life_quality", arguments)
+        result = await call_real_estate_mcp_tool("evaluate_life_quality", arguments)
         
         return {
             "success": result.get("success", False),
@@ -194,7 +203,7 @@ async def get_apartment_trade_form(
             "property_type": "아파트"
         }
         
-        result = await call_real_estate_tool("get_real_estate_data", arguments)
+        result = await call_real_estate_mcp_tool("get_real_estate_data", arguments)
         
         return templates.TemplateResponse("mcp_result.html", {
             "request": request,
@@ -237,7 +246,7 @@ async def recommend_property_form(
             "user_preference": user_preference
         }
         
-        result = await call_real_estate_tool("recommend_property", arguments)
+        result = await call_real_estate_mcp_tool("recommend_property", arguments)
         
         return templates.TemplateResponse("agent_result.html", {
             "request": request,
@@ -250,3 +259,61 @@ async def recommend_property_form(
             "request": request,
             "error": str(e)
         })
+
+# MCP 관련 엔드포인트
+@router.get("/api/mcp/tools")
+async def list_mcp_tools():
+    """MCP 도구 목록 조회"""
+    try:
+        tools = await get_real_estate_tools()
+        return {
+            "success": True,
+            "data": tools,
+            "message": f"{len(tools)}개의 MCP 도구를 찾았습니다"
+        }
+    except Exception as e:
+        logger.error(f"MCP 도구 목록 조회 오류: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "message": "MCP 도구 목록 조회 실패"
+        }
+
+@router.get("/api/mcp/resources")
+async def list_mcp_resources():
+    """MCP 리소스 목록 조회"""
+    try:
+        resources = await get_real_estate_resources()
+        return {
+            "success": True,
+            "data": resources,
+            "message": f"{len(resources)}개의 MCP 리소스를 찾았습니다"
+        }
+    except Exception as e:
+        logger.error(f"MCP 리소스 목록 조회 오류: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "message": "MCP 리소스 목록 조회 실패"
+        }
+
+@router.get("/api/mcp/resources/{uri:path}")
+async def read_mcp_resource(uri: str):
+    """MCP 리소스 읽기"""
+    try:
+        content = await read_real_estate_resource(uri)
+        return {
+            "success": True,
+            "data": {
+                "uri": uri,
+                "content": content
+            },
+            "message": "MCP 리소스를 성공적으로 읽었습니다"
+        }
+    except Exception as e:
+        logger.error(f"MCP 리소스 읽기 오류: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "message": f"MCP 리소스 '{uri}' 읽기 실패"
+        }
