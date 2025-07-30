@@ -138,18 +138,28 @@ real_estate_client = MCPClient("app.mcp.real_estate_recommendation_mcp")
 location_client = MCPClient("app.mcp.location_service")
 
 async def call_real_estate_tool(tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
-    """부동산 MCP 도구 호출 (직접 import 방식)"""
+    """부동산 MCP 도구 호출 (직접 함수 호출 방식)"""
     try:
-        # 직접 MCP 서버 모듈 import
-        from ..mcp.real_estate_recommendation_mcp import mcp
-        
-        # 도구 호출
-        tool_func = mcp.get_tool(tool_name)
-        if tool_func:
-            result = await tool_func(**arguments)
-            return {"success": True, "data": result}
+        # 도구별 직접 함수 호출
+        if tool_name == "get_real_estate_data":
+            from ..mcp.real_estate_recommendation_mcp import get_real_estate_data
+            result = await get_real_estate_data(**arguments)
+        elif tool_name == "analyze_location":
+            from ..mcp.real_estate_recommendation_mcp import analyze_location
+            result = await analyze_location(**arguments)
+        elif tool_name == "evaluate_investment_value":
+            from ..mcp.real_estate_recommendation_mcp import evaluate_investment_value
+            result = await evaluate_investment_value(**arguments)
+        elif tool_name == "evaluate_life_quality":
+            from ..mcp.real_estate_recommendation_mcp import evaluate_life_quality
+            result = await evaluate_life_quality(**arguments)
+        elif tool_name == "recommend_property":
+            from ..mcp.real_estate_recommendation_mcp import recommend_property
+            result = await recommend_property(**arguments)
         else:
             return {"success": False, "error": f"도구 '{tool_name}'을 찾을 수 없습니다"}
+            
+        return {"success": True, "data": result}
             
     except Exception as e:
         logger.error(f"부동산 MCP 도구 호출 오류: {e}")
@@ -160,18 +170,25 @@ async def call_real_estate_tool(tool_name: str, arguments: Dict[str, Any]) -> Di
         }
 
 async def call_location_tool(tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
-    """위치 MCP 도구 호출 (직접 import 방식)"""
+    """위치 MCP 도구 호출 (직접 함수 호출 방식)"""
     try:
-        # 직접 MCP 서버 모듈 import
-        from ..mcp.location_service import mcp
-        
-        # 도구 호출
-        tool_func = mcp.get_tool(tool_name)
-        if tool_func:
-            result = await tool_func(**arguments)
-            return {"success": True, "data": result}
+        # 도구별 직접 함수 호출
+        if tool_name == "find_nearest_subway_stations":
+            from ..mcp.location_service import find_nearest_subway_stations
+            result = await find_nearest_subway_stations(**arguments)
+        elif tool_name == "address_to_coordinates":
+            from ..mcp.location_service import address_to_coordinates
+            result = await address_to_coordinates(**arguments)
+        elif tool_name == "find_nearby_facilities":
+            from ..mcp.location_service import find_nearby_facilities
+            result = await find_nearby_facilities(**arguments)
+        elif tool_name == "calculate_location_score":
+            from ..mcp.location_service import calculate_location_score
+            result = await calculate_location_score(**arguments)
         else:
             return {"success": False, "error": f"도구 '{tool_name}'을 찾을 수 없습니다"}
+            
+        return {"success": True, "data": result}
             
     except Exception as e:
         logger.error(f"위치 MCP 도구 호출 오류: {e}")
