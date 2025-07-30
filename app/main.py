@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime
 import os
 
-from app.routes import agent_routes, data_routes, ai_routes, mcp_routes, web_routes
+from app.routes import agent_routes, data_routes, ai_routes, mcp_routes, web_routes, review_routes
 from app.utils.config import settings
 from app.utils.logger import logger
 
@@ -62,6 +62,7 @@ app.include_router(data_routes.router, prefix="/api/data", tags=["data"])
 app.include_router(ai_routes.router, prefix="/api/ai", tags=["ai"])
 app.include_router(mcp_routes.router, tags=["mcp"])
 app.include_router(web_routes.router, tags=["web"])
+app.include_router(review_routes.router, tags=["reviews"])
 
 # 헬스 체크 엔드포인트
 @app.get("/health")

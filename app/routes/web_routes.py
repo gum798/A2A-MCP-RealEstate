@@ -52,6 +52,21 @@ async def agent_test_page(request: Request):
     """Agent 기능 테스트 페이지"""
     return templates.TemplateResponse("agent_test.html", {"request": request})
 
+# 지도 페이지
+@router.get("/map", response_class=HTMLResponse)
+async def map_view_page(request: Request):
+    """지도 기반 부동산 검색 페이지"""
+    return templates.TemplateResponse("map_view.html", {
+        "request": request,
+        "naver_client_id": settings.naver_client_id or "demo_client_id"
+    })
+
+# 매물 비교 페이지
+@router.get("/compare", response_class=HTMLResponse)
+async def compare_page(request: Request):
+    """매물 비교 페이지"""
+    return templates.TemplateResponse("compare.html", {"request": request})
+
 # MCP API 엔드포인트
 @router.post("/api/mcp/test")
 async def test_mcp_tool(request: MCPTestRequest):

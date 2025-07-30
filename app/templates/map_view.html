@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+
+{% block title %}지도 기반 부동산 검색{% endblock %}
+
+{% block extra_head %}
+<script type="text/javascript" src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId={{ naver_client_id }}"></script>
+<style>
+    #map {
+        width: 100%;
+        height: 600px;
+        border-radius: 8px;
+    }
+    .property-info {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 15px;
+    }
+    .search-controls {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    .marker-info {
+        min-width: 200px;
+        padding: 15px;
+    }
+    .score-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        color: white;
+        font-weight: bold;
+        font-size: 0.85em;
+    }
+    .score-A { background-color: #28a745; }
+    .score-B { background-color: #ffc107; color: #000; }
+    .score-C { background-color: #dc3545; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2><i class="fas fa-map-marked-alt text-primary"></i> 지도 기반 부동산 검색</h2>
+        <p class="text-muted">지도에서 직접 부동산을 검색하고 비교해보세요</p>
+    </div>
+</div>
+
+<!-- 검색 컨트롤 -->
+<div class="search-controls">
+    <div class="row">
+        <div class="col-md-3">
+            <label class="form-label">지역 검색</label>
+            <input type="text" class="form-control" id="addressSearch" placeholder="예: 강남구 역삼동">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">부동산 유형</label>
+            <select class="form-select" id="propertyType">
+                <option value="아파트">아파트</option>
+                <option value="오피스텔">오피스텔</option>
+                <option value="연립다세대">연립다세대</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">가격 범위</label>
+            <select class="form-select" id="priceRange">
+                <option value="">전체</option>
+                <option value="0-50000">5억 이하</option>
+                <option value="50000-100000">5-10억</option>
+                <option value="100000-200000">10-20억</option>
+                <option value="200000-999999">20억 이상</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">평가 기준</label>
+            <select class="form-select" id="evaluationMode">
+                <option value="balanced">균형</option>
+                <option value="investment">투자가치</option>
+                <option value="life_quality">삶의질</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">&nbsp;</label>
+            <div class="d-grid">
+                <button class="btn btn-primary" onclick="searchProperties()">
+                    <i class="fas fa-search"></i> 검색
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 지도 영역 -->
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-map"></i> 부동산 지도</h5>
+            </div>
+            <div class="card-body p-0">
+                <div id="map"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 검색 결과 리스트 -->
+    <div class="col-lg-4">
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-list"></i> 검색 결과</h5>
+            </div>
+            <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+                <div id="propertyList">
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-search fa-2x mb-3"></i>
+                        <p>지역을 검색해보세요</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 상세 정보 모달 -->
+<div class="modal fade" id="propertyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">부동산 상세 정보</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="propertyModalBody">
+                <!-- 상세 정보가 여기에 로드됩니다 -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-primary" onclick="addToFavorites()">
+                    <i class="fas fa-heart"></i> 즐겨찾기 추가
+                </button>
+                <button type="button" class="btn btn-primary" onclick="compareProperty()">
+                    <i class="fas fa-balance-scale"></i> 비교하기
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let map;
+let markers = [];
+let currentProperties = [];
+
+// 지도 초기화
+function initMap() {
+    map = new naver.maps.Map('map', {
+        center: new naver.maps.LatLng(37.5665, 126.9780), // 서울 중심
+        zoom: 12,
+        mapTypeControl: true
+    });
+    
+    // 지도 클릭 이벤트
+    naver.maps.Event.addListener(map, 'click', function(e) {
+        searchNearbyProperties(e.coord.lat(), e.coord.lng());
+    });
+}
+
+// 부동산 검색
+async function searchProperties() {
+    const address = document.getElementById('addressSearch').value;
+    const propertyType = document.getElementById('propertyType').value;
+    const priceRange = document.getElementById('priceRange').value;
+    const evaluationMode = document.getElementById('evaluationMode').value;
+    
+    if (!address.trim()) {
+        alert('지역을 입력해주세요');
+        return;
+    }
+    
+    try {
+        showLoading(true);
+        
+        // 주소를 좌표로 변환
+        const geocodeResponse = await fetch('/web/api/mcp/test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                tool_name: 'address_to_coordinates',
+                parameters: { address: address }
+            })
+        });
+        
+        const geocodeResult = await geocodeResponse.json();
+        
+        if (!geocodeResult.success || !geocodeResult.data.data) {
+            alert('주소를 찾을 수 없습니다');
+            return;
+        }
+        
+        const { lat, lon } = geocodeResult.data.data;
+        
+        // 지도 중심 이동
+        map.setCenter(new naver.maps.LatLng(lat, lon));
+        map.setZoom(15);
+        
+        // 해당 지역의 부동산 데이터 검색
+        await searchNearbyProperties(lat, lon, propertyType, priceRange, evaluationMode);
+        
+    } catch (error) {
+        console.error('검색 오류:', error);
+        alert('검색 중 오류가 발생했습니다');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// 주변 부동산 검색
+async function searchNearbyProperties(lat, lon, propertyType = '아파트', priceRange = '', evaluationMode = 'balanced') {
+    try {
+        // 실제로는 부동산 실거래가 API를 호출하여 데이터를 가져옵니다
+        // 여기서는 샘플 데이터를 사용
+        const sampleProperties = generateSampleProperties(lat, lon);
+        
+        // 기존 마커 제거
+        clearMarkers();
+        
+        // 새 마커 추가
+        sampleProperties.forEach(property => {
+            addPropertyMarker(property);
+        });
+        
+        // 리스트 업데이트
+        updatePropertyList(sampleProperties);
+        currentProperties = sampleProperties;
+        
+    } catch (error) {
+        console.error('주변 부동산 검색 오류:', error);
+    }
+}
+
+// 부동산 마커 추가
+function addPropertyMarker(property) {
+    const marker = new naver.maps.Marker({
+        position: new naver.maps.LatLng(property.lat, property.lon),
+        map: map,
+        title: property.name,
+        icon: {
+            content: `
+                <div style="background: ${getScoreColor(property.score)}; color: white; padding: 5px 8px; 
+                           border-radius: 15px; font-size: 12px; font-weight: bold; 
+                           box-shadow: 0 2px 4px rgba(0,0,0,0.3);">
+                    ${property.score}점
+                </div>
+            `,
+            anchor: new naver.maps.Point(25, 25)
+        }
+    });
+    
+    // 마커 클릭 이벤트
+    naver.maps.Event.addListener(marker, 'click', function() {
+        showPropertyDetails(property);
+    });
+    
+    markers.push(marker);
+    return marker;
+}
+
+// 점수에 따른 색상 반환
+function getScoreColor(score) {
+    if (score >= 80) return '#28a745';
+    if (score >= 60) return '#ffc107';
+    return '#dc3545';
+}
+
+// 기존 마커 제거
+function clearMarkers() {
+    markers.forEach(marker => marker.setMap(null));
+    markers = [];
+}
+
+// 부동산 리스트 업데이트
+function updatePropertyList(properties) {
+    const listContainer = document.getElementById('propertyList');
+    
+    if (properties.length === 0) {
+        listContainer.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="fas fa-home fa-2x mb-3"></i>
+                <p>검색 결과가 없습니다</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const listHTML = properties.map(property => `
+        <div class="property-info" onclick="showPropertyDetails(${JSON.stringify(property).replace(/"/g, '&quot;')})">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <h6 class="mb-0">${property.name}</h6>
+                <span class="score-badge score-${property.grade}">${property.score}점</span>
+            </div>
+            <p class="text-muted small mb-2">${property.address}</p>
+            <div class="row text-center">
+                <div class="col-4">
+                    <small class="d-block text-muted">가격</small>
+                    <strong>${property.price}만원</strong>
+                </div>
+                <div class="col-4">
+                    <small class="d-block text-muted">면적</small>
+                    <strong>${property.area}㎡</strong>
+                </div>
+                <div class="col-4">
+                    <small class="d-block text-muted">지하철</small>
+                    <strong>${property.subway_distance}m</strong>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    listContainer.innerHTML = listHTML;
+}
+
+// 부동산 상세 정보 표시
+function showPropertyDetails(property) {
+    const modalBody = document.getElementById('propertyModalBody');
+    
+    modalBody.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6><i class="fas fa-home"></i> 기본 정보</h6>
+                <table class="table table-sm">
+                    <tr><td>주소</td><td>${property.address}</td></tr>
+                    <tr><td>가격</td><td>${property.price}만원</td></tr>
+                    <tr><td>면적</td><td>${property.area}㎡</td></tr>
+                    <tr><td>층수</td><td>${property.floor}층</td></tr>
+                    <tr><td>건축년도</td><td>${property.year}년</td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="fas fa-star"></i> 평가 점수</h6>
+                <div class="text-center mb-3">
+                    <h3 class="text-primary">${property.score}점</h3>
+                    <span class="score-badge score-${property.grade}">${property.grade}</span>
+                </div>
+                <div class="progress-list">
+                    <small>투자가치: ${property.investment_score}점</small>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar" style="width: ${property.investment_score}%"></div>
+                    </div>
+                    <small>삶의질: ${property.life_score}점</small>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-warning" style="width: ${property.life_score}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <hr>
+        <h6><i class="fas fa-map-marker-alt"></i> 위치 정보</h6>
+        <div class="row">
+            <div class="col-md-4">
+                <small class="text-muted">가장 가까운 지하철</small>
+                <p>${property.nearest_subway} (${property.subway_distance}m)</p>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted">편의시설</small>
+                <p>반경 1km 내 ${property.facilities_count}개</p>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted">공원</small>
+                <p>${property.park_distance}km</p>
+            </div>
+        </div>
+    `;
+    
+    new bootstrap.Modal(document.getElementById('propertyModal')).show();
+}
+
+// 샘플 데이터 생성 (실제로는 API에서 가져옴)
+function generateSampleProperties(centerLat, centerLon) {
+    const properties = [];
+    for (let i = 0; i < 10; i++) {
+        const lat = centerLat + (Math.random() - 0.5) * 0.01;
+        const lon = centerLon + (Math.random() - 0.5) * 0.01;
+        const score = Math.floor(Math.random() * 40) + 60; // 60-100점
+        
+        properties.push({
+            id: i + 1,
+            name: `샘플 아파트 ${i + 1}`,
+            address: `서울시 강남구 역삼동 ${i + 100}번지`,
+            lat: lat,
+            lon: lon,
+            price: Math.floor(Math.random() * 100000) + 50000,
+            area: Math.floor(Math.random() * 50) + 60,
+            floor: Math.floor(Math.random() * 20) + 1,
+            year: Math.floor(Math.random() * 30) + 1990,
+            score: score,
+            grade: score >= 80 ? 'A' : score >= 60 ? 'B' : 'C',
+            investment_score: Math.floor(Math.random() * 40) + 60,
+            life_score: Math.floor(Math.random() * 40) + 60,
+            nearest_subway: '역삼역',
+            subway_distance: Math.floor(Math.random() * 1000) + 200,
+            facilities_count: Math.floor(Math.random() * 20) + 5,
+            park_distance: Math.round((Math.random() * 2 + 0.5) * 10) / 10
+        });
+    }
+    return properties;
+}
+
+// 즐겨찾기 추가
+function addToFavorites() {
+    alert('즐겨찾기에 추가되었습니다!');
+}
+
+// 비교하기
+function compareProperty() {
+    alert('비교 기능은 준비 중입니다!');
+}
+
+// 로딩 표시
+function showLoading(show) {
+    // 로딩 스피너 표시/숨김 로직
+}
+
+// 페이지 로드 시 지도 초기화
+document.addEventListener('DOMContentLoaded', function() {
+    initMap();
+});
+</script>
+{% endblock %}

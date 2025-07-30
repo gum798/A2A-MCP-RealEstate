@@ -1,0 +1,585 @@
+{% extends "base.html" %}
+
+{% block title %}매물 비교{% endblock %}
+
+{% block extra_head %}
+<style>
+    .compare-card {
+        min-height: 400px;
+        transition: all 0.3s ease;
+    }
+    .compare-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    .score-circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 1.2em;
+        margin: 0 auto;
+    }
+    .comparison-table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+    .winner {
+        background-color: #d4edda !important;
+        font-weight: bold;
+    }
+    .radar-chart {
+        width: 100%;
+        height: 300px;
+    }
+    .add-property-card {
+        border: 2px dashed #dee2e6;
+        min-height: 400px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .add-property-card:hover {
+        border-color: #007bff;
+        background-color: #f8f9fa;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2><i class="fas fa-balance-scale text-primary"></i> 매물 비교</h2>
+                <p class="text-muted">최대 3개 매물을 선택하여 상세 비교해보세요</p>
+            </div>
+            <div>
+                <button class="btn btn-outline-primary me-2" onclick="clearAllProperties()">
+                    <i class="fas fa-trash"></i> 전체 삭제
+                </button>
+                <button class="btn btn-primary" onclick="generateReport()">
+                    <i class="fas fa-file-pdf"></i> 비교 리포트
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 매물 비교 카드들 -->
+<div class="row mb-4">
+    <div class="col-lg-4" id="property1">
+        <div class="card compare-card add-property-card" onclick="openPropertySearch(1)">
+            <div class="card-body text-center">
+                <i class="fas fa-plus-circle fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">첫 번째 매물 추가</h5>
+                <p class="text-muted">클릭하여 매물을 검색하세요</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4" id="property2">
+        <div class="card compare-card add-property-card" onclick="openPropertySearch(2)">
+            <div class="card-body text-center">
+                <i class="fas fa-plus-circle fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">두 번째 매물 추가</h5>
+                <p class="text-muted">클릭하여 매물을 검색하세요</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4" id="property3">
+        <div class="card compare-card add-property-card" onclick="openPropertySearch(3)">
+            <div class="card-body text-center">
+                <i class="fas fa-plus-circle fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">세 번째 매물 추가</h5>
+                <p class="text-muted">클릭하여 매물을 검색하세요</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 상세 비교 테이블 -->
+<div class="row" id="comparisonSection" style="display: none;">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-bar"></i> 상세 비교 분석</h5>
+            </div>
+            <div class="card-body">
+                <!-- 종합 점수 비교 -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6><i class="fas fa-trophy"></i> 종합 점수 비교</h6>
+                        <div class="row" id="scoreComparison">
+                            <!-- 점수 차트가 여기에 표시됩니다 -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 레이더 차트 -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6><i class="fas fa-spider"></i> 항목별 점수 비교</h6>
+                        <canvas id="radarChart" class="radar-chart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- 상세 비교 테이블 -->
+                <div class="table-responsive">
+                    <table class="table table-striped comparison-table" id="comparisonTable">
+                        <thead>
+                            <tr id="tableHeader">
+                                <th>비교 항목</th>
+                                <!-- 매물별 헤더가 동적으로 추가됩니다 -->
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- 비교 데이터가 동적으로 추가됩니다 -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 장단점 비교 -->
+                <div class="row mt-4" id="prosConsSection">
+                    <!-- 장단점 비교가 여기에 표시됩니다 -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 매물 검색 모달 -->
+<div class="modal fade" id="propertySearchModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">매물 검색</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">지역 검색</label>
+                        <input type="text" class="form-control" id="searchAddress" placeholder="예: 강남구 역삼동">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">부동산 유형</label>
+                        <select class="form-select" id="searchPropertyType">
+                            <option value="아파트">아파트</option>
+                            <option value="오피스텔">오피스텔</option>
+                            <option value="연립다세대">연립다세대</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <button class="btn btn-primary d-block w-100" onclick="searchProperties()">
+                            <i class="fas fa-search"></i> 검색
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="searchResults">
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-search fa-2x mb-3"></i>
+                        <p>지역을 검색해보세요</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let compareProperties = [null, null, null];
+let currentSearchIndex = 0;
+let radarChart = null;
+
+// 매물 검색 모달 열기
+function openPropertySearch(index) {
+    currentSearchIndex = index - 1;
+    new bootstrap.Modal(document.getElementById('propertySearchModal')).show();
+}
+
+// 매물 검색
+async function searchProperties() {
+    const address = document.getElementById('searchAddress').value;
+    const propertyType = document.getElementById('searchPropertyType').value;
+    
+    if (!address.trim()) {
+        alert('지역을 입력해주세요');
+        return;
+    }
+    
+    try {
+        // 샘플 데이터 생성 (실제로는 API 호출)
+        const properties = generateSampleProperties(address, propertyType);
+        displaySearchResults(properties);
+    } catch (error) {
+        console.error('검색 오류:', error);
+        alert('검색 중 오류가 발생했습니다');
+    }
+}
+
+// 검색 결과 표시
+function displaySearchResults(properties) {
+    const resultsContainer = document.getElementById('searchResults');
+    
+    if (properties.length === 0) {
+        resultsContainer.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="fas fa-home fa-2x mb-3"></i>
+                <p>검색 결과가 없습니다</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const resultsHTML = properties.map(property => `
+        <div class="card mb-2" style="cursor: pointer;" onclick="selectProperty(${JSON.stringify(property).replace(/"/g, '&quot;')})">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h6 class="mb-1">${property.name}</h6>
+                        <p class="text-muted mb-1">${property.address}</p>
+                        <small class="text-muted">${property.price}만원 • ${property.area}㎡ • ${property.year}년</small>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="score-circle" style="background-color: ${getScoreColor(property.score)}; width: 50px; height: 50px;">
+                            ${property.score}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    resultsContainer.innerHTML = resultsHTML;
+}
+
+// 매물 선택
+function selectProperty(property) {
+    compareProperties[currentSearchIndex] = property;
+    displayPropertyCard(property, currentSearchIndex + 1);
+    bootstrap.Modal.getInstance(document.getElementById('propertySearchModal')).hide();
+    
+    // 2개 이상 선택되면 비교 섹션 표시
+    const selectedCount = compareProperties.filter(p => p !== null).length;
+    if (selectedCount >= 2) {
+        document.getElementById('comparisonSection').style.display = 'block';
+        updateComparison();
+    }
+}
+
+// 매물 카드 표시
+function displayPropertyCard(property, index) {
+    const cardContainer = document.getElementById(`property${index}`);
+    
+    cardContainer.innerHTML = `
+        <div class="card compare-card shadow">
+            <div class="card-header text-center">
+                <div class="score-circle mb-2" style="background-color: ${getScoreColor(property.score)};">
+                    ${property.score}
+                </div>
+                <h6 class="mb-0">${property.name}</h6>
+                <button class="btn btn-sm btn-outline-danger mt-2" onclick="removeProperty(${index})">
+                    <i class="fas fa-times"></i> 제거
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <small class="text-muted d-block">주소</small>
+                    <strong>${property.address}</strong>
+                </div>
+                <div class="row text-center mb-3">
+                    <div class="col-4">
+                        <small class="text-muted d-block">가격</small>
+                        <strong>${property.price}만원</strong>
+                    </div>
+                    <div class="col-4">
+                        <small class="text-muted d-block">면적</small>
+                        <strong>${property.area}㎡</strong>
+                    </div>
+                    <div class="col-4">
+                        <small class="text-muted d-block">층수</small>
+                        <strong>${property.floor}층</strong>
+                    </div>
+                </div>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <small class="text-muted d-block">투자가치</small>
+                        <div class="progress mb-1" style="height: 8px;">
+                            <div class="progress-bar" style="width: ${property.investment_score}%"></div>
+                        </div>
+                        <small>${property.investment_score}점</small>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">삶의질</small>
+                        <div class="progress mb-1" style="height: 8px;">
+                            <div class="progress-bar bg-warning" style="width: ${property.life_score}%"></div>
+                        </div>
+                        <small>${property.life_score}점</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// 매물 제거
+function removeProperty(index) {
+    compareProperties[index - 1] = null;
+    
+    // 빈 카드로 복원
+    const cardContainer = document.getElementById(`property${index}`);
+    cardContainer.innerHTML = `
+        <div class="card compare-card add-property-card" onclick="openPropertySearch(${index})">
+            <div class="card-body text-center">
+                <i class="fas fa-plus-circle fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">${index === 1 ? '첫 번째' : index === 2 ? '두 번째' : '세 번째'} 매물 추가</h5>
+                <p class="text-muted">클릭하여 매물을 검색하세요</p>
+            </div>
+        </div>
+    `;
+    
+    // 선택된 매물이 2개 미만이면 비교 섹션 숨김
+    const selectedCount = compareProperties.filter(p => p !== null).length;
+    if (selectedCount < 2) {
+        document.getElementById('comparisonSection').style.display = 'none';
+    } else {
+        updateComparison();
+    }
+}
+
+// 전체 매물 삭제
+function clearAllProperties() {
+    for (let i = 1; i <= 3; i++) {
+        removeProperty(i);
+    }
+}
+
+// 비교 데이터 업데이트
+function updateComparison() {
+    const selectedProperties = compareProperties.filter(p => p !== null);
+    
+    updateScoreComparison(selectedProperties);
+    updateRadarChart(selectedProperties);
+    updateComparisonTable(selectedProperties);
+    updateProsConsSection(selectedProperties);
+}
+
+// 점수 비교 업데이트
+function updateScoreComparison(properties) {
+    const container = document.getElementById('scoreComparison');
+    
+    const scoreHTML = properties.map(property => `
+        <div class="col-md-${12 / properties.length} text-center">
+            <div class="mb-3">
+                <div class="score-circle mx-auto mb-2" style="background-color: ${getScoreColor(property.score)};">
+                    ${property.score}
+                </div>
+                <h6>${property.name}</h6>
+                <div class="row">
+                    <div class="col-6">
+                        <small class="text-muted">투자</small>
+                        <div class="fw-bold">${property.investment_score}</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">삶의질</small>
+                        <div class="fw-bold">${property.life_score}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    container.innerHTML = scoreHTML;
+}
+
+// 레이더 차트 업데이트
+function updateRadarChart(properties) {
+    const ctx = document.getElementById('radarChart').getContext('2d');
+    
+    if (radarChart) {
+        radarChart.destroy();
+    }
+    
+    const datasets = properties.map((property, index) => ({
+        label: property.name,
+        data: [
+            property.investment_score,
+            property.life_score,
+            Math.floor(Math.random() * 40) + 60, // 교통 점수
+            Math.floor(Math.random() * 40) + 60, // 환경 점수
+            Math.floor(Math.random() * 40) + 60, // 편의성 점수
+            Math.floor(Math.random() * 40) + 60  // 안전성 점수
+        ],
+        backgroundColor: `rgba(${index * 100}, ${150 - index * 50}, ${200 + index * 50}, 0.2)`,
+        borderColor: `rgba(${index * 100}, ${150 - index * 50}, ${200 + index * 50}, 1)`,
+        pointBackgroundColor: `rgba(${index * 100}, ${150 - index * 50}, ${200 + index * 50}, 1)`,
+        borderWidth: 2
+    }));
+    
+    radarChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['투자가치', '삶의질', '교통', '환경', '편의성', '안전성'],
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+}
+
+// 비교 테이블 업데이트
+function updateComparisonTable(properties) {
+    const header = document.getElementById('tableHeader');
+    const body = document.getElementById('tableBody');
+    
+    // 헤더 업데이트
+    let headerHTML = '<th>비교 항목</th>';
+    properties.forEach(property => {
+        headerHTML += `<th class="text-center">${property.name}</th>`;
+    });
+    header.innerHTML = headerHTML;
+    
+    // 비교 항목들
+    const comparisonItems = [
+        { label: '가격', key: 'price', unit: '만원', type: 'number', lower_better: true },
+        { label: '면적', key: 'area', unit: '㎡', type: 'number' },
+        { label: '층수', key: 'floor', unit: '층', type: 'number' },
+        { label: '건축년도', key: 'year', unit: '년', type: 'number' },
+        { label: '종합점수', key: 'score', unit: '점', type: 'number' },
+        { label: '투자가치', key: 'investment_score', unit: '점', type: 'number' },
+        { label: '삶의질', key: 'life_score', unit: '점', type: 'number' },
+        { label: '지하철거리', key: 'subway_distance', unit: 'm', type: 'number', lower_better: true }
+    ];
+    
+    let bodyHTML = '';
+    comparisonItems.forEach(item => {
+        let rowHTML = `<tr><td><strong>${item.label}</strong></td>`;
+        
+        const values = properties.map(p => p[item.key]);
+        const bestIndex = item.lower_better ? 
+            values.indexOf(Math.min(...values)) : 
+            values.indexOf(Math.max(...values));
+        
+        properties.forEach((property, index) => {
+            const value = property[item.key];
+            const cellClass = index === bestIndex ? 'winner text-center' : 'text-center';
+            rowHTML += `<td class="${cellClass}">${value}${item.unit}</td>`;
+        });
+        
+        rowHTML += '</tr>';
+        bodyHTML += rowHTML;
+    });
+    
+    body.innerHTML = bodyHTML;
+}
+
+// 장단점 섹션 업데이트
+function updateProsConsSection(properties) {
+    const container = document.getElementById('prosConsSection');
+    
+    const prosConsHTML = properties.map(property => `
+        <div class="col-md-${12 / properties.length}">
+            <h6><i class="fas fa-home"></i> ${property.name}</h6>
+            <div class="card">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="text-success"><i class="fas fa-thumbs-up"></i> 장점</h6>
+                        <ul class="list-unstyled">
+                            ${generatePros(property).map(pro => `<li><i class="fas fa-check text-success"></i> ${pro}</li>`).join('')}
+                        </ul>
+                    </div>
+                    <div>
+                        <h6 class="text-danger"><i class="fas fa-thumbs-down"></i> 단점</h6>
+                        <ul class="list-unstyled">
+                            ${generateCons(property).map(con => `<li><i class="fas fa-times text-danger"></i> ${con}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    container.innerHTML = prosConsHTML;
+}
+
+// 장점 생성
+function generatePros(property) {
+    const pros = [];
+    if (property.score >= 80) pros.push('우수한 종합 점수');
+    if (property.investment_score >= 80) pros.push('높은 투자가치');
+    if (property.life_score >= 80) pros.push('뛰어난 삶의질');
+    if (property.subway_distance <= 300) pros.push('지하철 접근성 우수');
+    if (property.year >= 2010) pros.push('비교적 최신 건물');
+    if (pros.length === 0) pros.push('안정적인 매물');
+    return pros.slice(0, 3);
+}
+
+// 단점 생성
+function generateCons(property) {
+    const cons = [];
+    if (property.score < 70) cons.push('종합 점수 개선 필요');
+    if (property.investment_score < 70) cons.push('투자가치 검토 필요');
+    if (property.life_score < 70) cons.push('삶의질 요소 부족');
+    if (property.subway_distance > 800) cons.push('지하철역까지 거리 있음');
+    if (property.year < 2000) cons.push('건물 노후화');
+    if (cons.length === 0) cons.push('특별한 단점 없음');
+    return cons.slice(0, 3);
+}
+
+// 점수 색상 반환
+function getScoreColor(score) {
+    if (score >= 80) return '#28a745';
+    if (score >= 60) return '#ffc107';
+    return '#dc3545';
+}
+
+// 비교 리포트 생성
+function generateReport() {
+    const selectedCount = compareProperties.filter(p => p !== null).length;
+    if (selectedCount < 2) {
+        alert('비교할 매물을 2개 이상 선택해주세요');
+        return;
+    }
+    
+    alert('비교 리포트를 생성합니다. (PDF 다운로드 기능은 준비 중입니다)');
+}
+
+// 샘플 데이터 생성
+function generateSampleProperties(address, propertyType) {
+    const properties = [];
+    for (let i = 0; i < 5; i++) {
+        const score = Math.floor(Math.random() * 40) + 60;
+        properties.push({
+            id: i + 1,
+            name: `${propertyType} ${i + 1}`,
+            address: `${address} ${i + 100}번지`,
+            price: Math.floor(Math.random() * 100000) + 50000,
+            area: Math.floor(Math.random() * 50) + 60,
+            floor: Math.floor(Math.random() * 20) + 1,
+            year: Math.floor(Math.random() * 30) + 1990,
+            score: score,
+            investment_score: Math.floor(Math.random() * 40) + 60,
+            life_score: Math.floor(Math.random() * 40) + 60,
+            subway_distance: Math.floor(Math.random() * 1000) + 200
+        });
+    }
+    return properties;
+}
+</script>
+{% endblock %}
