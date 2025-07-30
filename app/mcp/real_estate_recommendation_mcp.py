@@ -464,7 +464,7 @@ async def get_real_estate_data(lawd_cd: str, deal_ymd: str, property_type: str =
                     csv_content = csv_content[1:]
                 
                 # 개선된 파싱 함수 사용
-                items = parse_csv_data(csv_content, lawd_cd_name, from_date, to_date, property_type)
+                items = parse_csv_data(csv_content, sgg_name, from_date, to_date, property_type)
                         
             except Exception as parse_error:
                 if os.getenv("ENVIRONMENT", "production") == "development":
