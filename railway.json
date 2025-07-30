@@ -1,0 +1,9 @@
+{
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "startCommand": "python runner.py",
+    "healthcheckPath": "/health"
+  }
+}

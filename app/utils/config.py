@@ -1,6 +1,7 @@
 """
 설정 관리 모듈
 """
+import os
 from pydantic_settings import BaseSettings
 from typing import Optional
 
@@ -8,8 +9,8 @@ from typing import Optional
 class Settings(BaseSettings):
     """애플리케이션 설정"""
     
-    # 서버 설정
-    port: int = 8000
+    # 서버 설정  
+    port: int = int(os.getenv("PORT", 8000))  # Railway 동적 포트 지원
     host: str = "0.0.0.0"
     environment: str = "development"
     
