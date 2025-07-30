@@ -35,6 +35,35 @@ def main():
         logger.warning("⚠️  국토교통부 API 키: 설정되지 않음")
         logger.warning("   부동산 데이터 조회를 위해 .env 파일에 MOLIT_API_KEY를 설정하세요")
     
+    if settings.naver_client_id and settings.naver_client_secret:
+        logger.info("🗺️  네이버 API 키: 설정됨")
+    else:
+        logger.warning("⚠️  네이버 API 키: 설정되지 않음")
+        logger.warning("   위치 서비스를 위해 .env 파일에 NAVER_CLIENT_ID, NAVER_CLIENT_SECRET을 설정하세요")
+    
+    logger.info("=" * 50)
+    
+    # 접속 링크 출력
+    if settings.environment == "development":
+        logger.info("🌐 로컬 접속 링크:")
+        logger.info(f"   • 메인 페이지: http://localhost:{settings.port}/web/")
+        logger.info(f"   • MCP 테스트: http://localhost:{settings.port}/web/mcp")
+        logger.info(f"   • Agent 테스트: http://localhost:{settings.port}/web/agent")
+        logger.info(f"   • API 문서: http://localhost:{settings.port}/docs")
+    else:
+        # Railway 배포 환경
+        railway_url = os.getenv("RAILWAY_PUBLIC_DOMAIN")
+        if railway_url:
+            logger.info("🌐 Railway 배포 링크:")
+            logger.info(f"   • 메인 페이지: https://{railway_url}/web/")
+            logger.info(f"   • MCP 테스트: https://{railway_url}/web/mcp")
+            logger.info(f"   • Agent 테스트: https://{railway_url}/web/agent")
+            logger.info(f"   • API 문서: https://{railway_url}/docs")
+        else:
+            logger.info("🌐 접속 링크:")
+            logger.info("   • Railway 배포 URL을 확인하세요")
+            logger.info("   • a2a-mcp-realestate-production.up.railway.app")
+    
     logger.info("=" * 50)
     
     # 서버 실행
