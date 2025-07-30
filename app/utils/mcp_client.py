@@ -24,17 +24,27 @@ class MCPClient:
         """MCP 도구 호출"""
         try:
             # MCP 서버 실행 및 도구 호출을 위한 임시 스크립트 생성
+            # 프로젝트 루트 경로 계산
+            project_root = Path(__file__).parent.parent.parent
+            mcp_module_path = self.server_script_path.replace("/", ".").replace(".py", "")
+            
             script_content = f'''
 import asyncio
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from pathlib import Path
 
-from {self.server_script_path.replace("/", ".").replace(".py", "")} import mcp
+# 프로젝트 루트를 Python 경로에 추가
+project_root = Path("{project_root}")
+sys.path.insert(0, str(project_root))
+
 import json
 
 async def main():
     try:
+        # MCP 서버 모듈 동적 임포트
+        from {mcp_module_path} import mcp
+        
         # 도구 실행
         result = await mcp.get_tool("{tool_name}")(**{arguments})
         print(json.dumps(result, ensure_ascii=False, default=str))
@@ -128,9 +138,45 @@ real_estate_client = MCPClient("app.mcp.real_estate_recommendation_mcp")
 location_client = MCPClient("app.mcp.location_service")
 
 async def call_real_estate_tool(tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
-    """부동산 MCP 도구 호출"""
-    return await real_estate_client.call_tool(tool_name, arguments)
+    """부동산 MCP 도구 호출 (직접 import 방식)"""
+    try:
+        # 직접 MCP 서버 모듈 import
+        from ..mcp.real_estate_recommendation_mcp import mcp
+        
+        # 도구 호출
+        tool_func = mcp.get_tool(tool_name)
+        if tool_func:
+            result = await tool_func(**arguments)
+            return {"success": True, "data": result}
+        else:
+            return {"success": False, "error": f"도구 '{tool_name}'을 찾을 수 없습니다"}
+            
+    except Exception as e:
+        logger.error(f"부동산 MCP 도구 호출 오류: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "message": f"MCP 도구 '{tool_name}' 호출 실패"
+        }
 
 async def call_location_tool(tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
-    """위치 MCP 도구 호출"""  
-    return await location_client.call_tool(tool_name, arguments)
+    """위치 MCP 도구 호출 (직접 import 방식)"""
+    try:
+        # 직접 MCP 서버 모듈 import
+        from ..mcp.location_service import mcp
+        
+        # 도구 호출
+        tool_func = mcp.get_tool(tool_name)
+        if tool_func:
+            result = await tool_func(**arguments)
+            return {"success": True, "data": result}
+        else:
+            return {"success": False, "error": f"도구 '{tool_name}'을 찾을 수 없습니다"}
+            
+    except Exception as e:
+        logger.error(f"위치 MCP 도구 호출 오류: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "message": f"MCP 도구 '{tool_name}' 호출 실패"
+        }
