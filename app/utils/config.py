@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     
     # 부동산 API 설정
     molit_api_key: Optional[str] = None
+    naver_client_id: Optional[str] = None
+    naver_client_secret: Optional[str] = None
     
     class Config:
         env_file = ".env"
