@@ -4,6 +4,8 @@
   },
   "deploy": {
     "startCommand": "python runner.py",
-    "healthcheckPath": "/health"
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 300,
+    "restartPolicyType": "ON_FAILURE"
   }
 }
