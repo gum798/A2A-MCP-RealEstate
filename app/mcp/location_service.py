@@ -246,13 +246,14 @@ async def address_to_coordinates(address: str) -> Dict[str, Any]:
         }
 
 @mcp.tool()
-async def find_nearby_facilities(lat: float, lon: float, category: str = "편의점", radius: int = 1000) -> Dict[str, Any]:
+async def find_nearby_facilities(lat: float = None, lon: float = None, address: str = "", category: str = "편의점", radius: int = 1000) -> Dict[str, Any]:
     """
     주변 편의시설 검색
     
     Args:
-        lat: 위도
-        lon: 경도
+        lat: 위도 (선택사항)
+        lon: 경도 (선택사항)
+        address: 주소 (좌표가 없을 경우 주소로 좌표 변환)
         category: 시설 카테고리 (편의점, 병원, 학교, 마트, 공원 등)
         radius: 검색 반경 (미터, 기본값: 1000m)
     
@@ -273,6 +274,24 @@ async def find_nearby_facilities(lat: float, lon: float, category: str = "편의
             "error": "NCP IAM 자격 증명이 감지되었습니다. Maps API에는 Application API 키가 필요합니다.",
             "message": "네이버 클라우드 플랫폼 콘솔에서 Maps → Application 등록 후 Client ID/Secret을 발급받아 사용해주세요."
         }
+    
+    # 좌표가 없으면 주소로 좌표 변환
+    if lat is None or lon is None:
+        if not address:
+            return {
+                "success": False,
+                "error": "주소 또는 좌표 정보가 필요합니다",
+                "message": "address 또는 lat, lon 파라미터를 제공해주세요"
+            }
+        
+        # 네이버 API로 주소를 좌표로 변환 (MCP 도구에서 원본 함수 호출)
+        tool = await mcp.get_tool("address_to_coordinates")
+        coord_result = await tool.fn(address)
+        if not coord_result["success"]:
+            return coord_result
+        
+        lat = coord_result["data"]["lat"]
+        lon = coord_result["data"]["lon"]
     
     try:
         url = "https://naveropenapi.apigw.ntruss.com/map-place/v1/search"
