@@ -36,56 +36,213 @@ class FastMCPClient:
                 logger.error(f"FastMCP 서버 초기화 실패: {e}")
                 raise
     
+    async def _get_direct_function_map(self) -> Dict[str, Any]:
+        """직접 함수 매핑 - 최후의 수단"""
+        if self.module_name == "app.mcp.real_estate_recommendation_mcp":
+            from ..mcp import real_estate_recommendation_mcp
+            return {
+                "get_real_estate_data": real_estate_recommendation_mcp.get_real_estate_data,
+                "analyze_location": real_estate_recommendation_mcp.analyze_location,
+                "evaluate_investment_value": real_estate_recommendation_mcp.evaluate_investment_value,
+                "evaluate_life_quality": real_estate_recommendation_mcp.evaluate_life_quality,
+                "recommend_property": real_estate_recommendation_mcp.recommend_property,
+                "get_regional_price_statistics": real_estate_recommendation_mcp.get_regional_price_statistics,
+                "compare_similar_properties": real_estate_recommendation_mcp.compare_similar_properties
+            }
+        elif self.module_name == "app.mcp.location_service":
+            from ..mcp import location_service
+            return {
+                "find_nearest_subway_stations": location_service.find_nearest_subway_stations,
+                "address_to_coordinates": location_service.address_to_coordinates,
+                "find_nearby_facilities": location_service.find_nearby_facilities,
+                "calculate_location_score": location_service.calculate_location_score,
+                "get_realtime_traffic_info": location_service.get_realtime_traffic_info,
+                "get_subway_realtime_arrival": location_service.get_subway_realtime_arrival
+            }
+        else:
+            return {}
+    
     async def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        """MCP 도구 호출"""
+        """MCP 도구 호출 - FastMCP의 실제 구조 확인 후 호출"""
         try:
             await self._ensure_initialized()
             
-            # 도구 가져오기 (FastMCP의 get_tool은 비동기)
-            tool = await self.mcp_server.get_tool(tool_name)
-            if tool is None:
+            logger.info(f"MCP 도구 '{tool_name}' 호출 시작, 인자: {arguments}")
+            
+            # FastMCP 객체의 실제 속성과 메서드 확인
+            mcp_methods = [method for method in dir(self.mcp_server) if not method.startswith('_')]
+            logger.info(f"FastMCP 사용 가능한 메서드들: {mcp_methods}")
+            
+            # FastMCP 도구 호출 - 여러 방법 시도
+            result = None
+            tool = None
+            
+            # 1단계: call_tool 메서드가 있는지 확인
+            if hasattr(self.mcp_server, 'call_tool'):
+                logger.info("방법 1: call_tool 메서드 사용 시도")
+                try:
+                    result = await self.mcp_server.call_tool(tool_name, arguments)
+                except Exception as e:
+                    logger.warning(f"call_tool 방법 실패: {e}")
+            
+            # 2단계: get_tools()로 도구 딕셔너리 접근
+            if result is None:
+                logger.info("방법 2: get_tools() 메서드로 도구 딕셔너리 접근 시도")
+                try:
+                    tools_dict = await self.mcp_server.get_tools()
+                    if tool_name in tools_dict:
+                        tool_func = tools_dict[tool_name]
+                        logger.info(f"Tool 객체 타입: {type(tool_func)}")
+                        logger.info(f"Tool 객체 속성: {[attr for attr in dir(tool_func) if not attr.startswith('_')]}")
+                        
+                        # FastMCP FunctionTool 특별 처리 - fn 메서드 우선 시도 (dict 반환)
+                        if hasattr(tool_func, 'fn') and callable(tool_func.fn):
+                            try:
+                                result = await tool_func.fn(**arguments)
+                                logger.info("get_tools()[].fn 방법 성공")
+                            except Exception as e:
+                                logger.warning(f"get_tools()[].fn 방법 실패: {e}")
+                        
+                        elif hasattr(tool_func, 'run') and callable(tool_func.run):
+                            try:
+                                tool_result = await tool_func.run(arguments)
+                                # ToolResult 객체를 dict로 변환
+                                if hasattr(tool_result, 'content'):
+                                    result = {
+                                        "success": True,
+                                        "data": tool_result.content,
+                                        "message": "도구 호출 완료"
+                                    }
+                                else:
+                                    result = {
+                                        "success": True,
+                                        "data": str(tool_result),
+                                        "message": "도구 호출 완료"
+                                    }
+                                logger.info("get_tools()[].run 방법 성공")
+                            except Exception as e:
+                                logger.warning(f"get_tools()[].run 방법 실패: {e}")
+                        
+                        elif hasattr(tool_func, 'handler') and callable(tool_func.handler):
+                            try:
+                                result = await tool_func.handler(**arguments)
+                                logger.info("get_tools()[].handler 방법 성공")
+                            except Exception as e:
+                                logger.warning(f"get_tools()[].handler 방법 실패: {e}")
+                        
+                        elif hasattr(tool_func, 'function') and callable(tool_func.function):
+                            try:
+                                result = await tool_func.function(**arguments)
+                                logger.info("get_tools()[].function 방법 성공")
+                            except Exception as e:
+                                logger.warning(f"get_tools()[].function 방법 실패: {e}")
+                        
+                        elif hasattr(tool_func, 'func') and callable(tool_func.func):
+                            try:
+                                result = await tool_func.func(**arguments)
+                                logger.info("get_tools()[].func 방법 성공")
+                            except Exception as e:
+                                logger.warning(f"get_tools()[].func 방법 실패: {e}")
+                        
+                        elif hasattr(tool_func, '__call__'):
+                            try:
+                                result = await tool_func(**arguments)
+                                logger.info("get_tools()[] 직접 호출 방법 성공")
+                            except Exception as e:
+                                logger.warning(f"get_tools()[] 직접 호출 방법 실패: {e}")
+                except Exception as e:
+                    logger.warning(f"get_tools() 방법 실패: {e}")
+            
+            # 3단계: get_tool 메서드 사용
+            if result is None:
+                logger.info("방법 3: get_tool 메서드 사용 시도")
+                try:
+                    tool = await self.mcp_server.get_tool(tool_name)
+                    if tool:
+                        logger.info(f"Get_tool 결과 타입: {type(tool)}")
+                        logger.info(f"Get_tool 결과 속성: {[attr for attr in dir(tool) if not attr.startswith('_')]}")
+                        
+                        # fn 메서드 우선 시도 (dict 반환)
+                        if hasattr(tool, 'fn') and callable(tool.fn):
+                            try:
+                                result = await tool.fn(**arguments)
+                                logger.info("get_tool().fn 방법 성공")
+                            except Exception as e:
+                                logger.warning(f"get_tool().fn 방법 실패: {e}")
+                        
+                        # run 메서드 시도 (ToolResult 반환)
+                        elif hasattr(tool, 'run') and callable(tool.run):
+                            try:
+                                tool_result = await tool.run(arguments)
+                                # ToolResult 객체를 dict로 변환
+                                if hasattr(tool_result, 'content'):
+                                    result = {
+                                        "success": True,
+                                        "data": tool_result.content,
+                                        "message": "도구 호출 완료"
+                                    }
+                                else:
+                                    result = {
+                                        "success": True,
+                                        "data": str(tool_result),
+                                        "message": "도구 호출 완료"
+                                    }
+                                logger.info("get_tool().run 방법 성공")
+                            except Exception as e:
+                                logger.warning(f"get_tool().run 방법 실패: {e}")
+                        
+                        # 다른 속성들 시도
+                        elif result is None:
+                            for attr_name in ['function', 'handler', 'callback']:
+                                if hasattr(tool, attr_name):
+                                    attr_func = getattr(tool, attr_name)
+                                    if callable(attr_func):
+                                        try:
+                                            result = await attr_func(**arguments)
+                                            logger.info(f"get_tool().{attr_name} 방법 성공")
+                                            break
+                                        except Exception as e:
+                                            logger.warning(f"get_tool().{attr_name} 방법 실패: {e}")
+                except Exception as e:
+                    logger.warning(f"get_tool 방법 실패: {e}")
+            
+            # 4단계: 최후의 수단 - 직접 함수 매핑
+            if result is None:
+                logger.info("방법 4: 직접 함수 매핑 사용")
+                function_map = await self._get_direct_function_map()
+                if tool_name in function_map:
+                    try:
+                        result = await function_map[tool_name](**arguments)
+                        logger.info("직접 함수 매핑 방법 성공")
+                    except Exception as e:
+                        logger.warning(f"직접 함수 매핑 방법 실패: {e}")
+            
+            if result is None:
+                raise Exception(f"모든 방법으로 도구 '{tool_name}' 호출 실패")
+            
+            logger.info(f"MCP 도구 '{tool_name}' 호출 완료, 결과: {result}")
+            
+            # 결과가 dict이고 success 키가 있는지 확인
+            if isinstance(result, dict):
+                return result
+            else:
+                # 결과가 예상 형식이 아닌 경우 래핑
                 return {
-                    "success": False,
-                    "error": f"도구 '{tool_name}'을 찾을 수 없습니다",
-                    "message": "MCP 도구를 찾을 수 없습니다"
+                    "success": True,
+                    "data": result,
+                    "message": "도구 호출 완료"
                 }
             
-            # 도구 실행 (FunctionTool의 fn 메서드 직접 호출)
-            if hasattr(tool, 'fn') and callable(tool.fn):
-                # FastMCP의 FunctionTool.fn을 직접 호출
-                result = await tool.fn(**arguments)
-            elif hasattr(tool, 'run'):
-                tool_result = await tool.run(arguments)
-                # ToolResult에서 실제 데이터 추출
-                if hasattr(tool_result, 'content'):
-                    if isinstance(tool_result.content, list) and tool_result.content:
-                        # content가 리스트인 경우 첫 번째 항목의 text 추출
-                        first_content = tool_result.content[0]
-                        if hasattr(first_content, 'text'):
-                            try:
-                                result = json.loads(first_content.text)
-                            except:
-                                result = first_content.text
-                        else:
-                            result = first_content
-                    else:
-                        result = tool_result.content
-                else:
-                    result = tool_result
-            else:
-                result = await tool(**arguments)
-            
-            return {
-                "success": True,
-                "data": result
-            }
-            
         except Exception as e:
+            import traceback
+            error_traceback = traceback.format_exc()
             logger.error(f"MCP 도구 '{tool_name}' 호출 실패: {e}")
+            logger.error(f"상세 오류: {error_traceback}")
             return {
                 "success": False,
                 "error": str(e),
-                "message": f"MCP 도구 '{tool_name}' 호출 중 오류가 발생했습니다"
+                "message": f"MCP 도구 '{tool_name}' 호출 중 오류가 발생했습니다",
+                "traceback": error_traceback
             }
     
     async def list_tools(self) -> List[Dict[str, Any]]:

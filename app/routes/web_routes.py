@@ -104,8 +104,10 @@ async def test_mcp_tool(request: MCPTestRequest):
 # Agent API 엔드포인트
 @router.post("/api/agent/recommend")
 async def recommend_property(request: AgentTestRequest):
-    """부동산 추천"""
+    """부동산 추천 - 디버깅 강화 버전"""
     try:
+        logger.info(f"부동산 추천 요청 시작: {request.address}")
+        
         # MCP 서버의 recommend_property 도구 호출
         arguments = {
             "address": request.address,
@@ -119,22 +121,54 @@ async def recommend_property(request: AgentTestRequest):
             "user_preference": request.user_preference
         }
         
+        logger.info(f"MCP 도구 호출 시작, 인자: {arguments}")
+        
+        # FastMCP 클라이언트를 통한 올바른 MCP 도구 호출
         result = await call_real_estate_mcp_tool("recommend_property", arguments)
         
-        return {
-            "success": result.get("success", False),
-            "data": result.get("data", {}),
-            "message": result.get("message", "부동산 추천이 완료되었습니다")
-        }
+        logger.info(f"MCP 도구 호출 결과: success={result.get('success')}, message={result.get('message')}")
+        
+        if result.get("success"):
+            return {
+                "success": True,
+                "data": result.get("data", {}),
+                "message": result.get("message", "부동산 추천이 완료되었습니다")
+            }
+        else:
+            return {
+                "success": False,
+                "error": result.get("error", "알 수 없는 오류"),
+                "message": result.get("message", "MCP 도구 호출 실패"),
+                "mcp_result": result  # 원본 MCP 결과도 포함
+            }
         
     except Exception as e:
+        import traceback
+        error_traceback = traceback.format_exc()
         logger.error(f"부동산 추천 중 오류: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"상세 오류: {error_traceback}")
+        return {
+            "success": False,
+            "error": str(e),
+            "message": f"부동산 추천 중 오류가 발생했습니다: {str(e)}",
+            "traceback": error_traceback,
+            "request_data": {
+                "address": request.address,
+                "price": request.price,
+                "area": request.area,
+                "floor": request.floor,
+                "total_floor": request.total_floor,
+                "building_year": request.building_year,
+                "property_type": request.property_type,
+                "deal_type": request.deal_type,
+                "user_preference": request.user_preference
+            }
+        }
 
 # 투자가치 평가
 @router.post("/api/agent/investment")
 async def evaluate_investment(request: AgentTestRequest):
-    """투자가치 평가"""
+    """투자가치 평가 - MCP 방식 사용"""
     try:
         arguments = {
             "address": request.address,
@@ -157,12 +191,16 @@ async def evaluate_investment(request: AgentTestRequest):
         
     except Exception as e:
         logger.error(f"투자가치 평가 중 오류: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return {
+            "success": False,
+            "error": str(e),
+            "message": f"투자가치 평가 중 오류가 발생했습니다: {str(e)}"
+        }
 
 # 삶의질 평가
 @router.post("/api/agent/life-quality")
 async def evaluate_life_quality(request: AgentTestRequest):
-    """삶의질가치 평가"""
+    """삶의질가치 평가 - MCP 방식 사용"""
     try:
         arguments = {
             "address": request.address,
@@ -185,7 +223,11 @@ async def evaluate_life_quality(request: AgentTestRequest):
         
     except Exception as e:
         logger.error(f"삶의질가치 평가 중 오류: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return {
+            "success": False,
+            "error": str(e),
+            "message": f"삶의질가치 평가 중 오류가 발생했습니다: {str(e)}"
+        }
 
 # 실거래가 조회 (폼 기반)
 @router.post("/mcp/apartment-trade", response_class=HTMLResponse)

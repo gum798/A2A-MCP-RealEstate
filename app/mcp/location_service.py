@@ -116,9 +116,8 @@ async def find_nearest_subway_stations(address: str, lat: float = None, lon: flo
                     "message": "address 또는 lat, lon 파라미터를 제공해주세요"
                 }
             
-            # 네이버 API로 주소를 좌표로 변환 (MCP 도구에서 원본 함수 호출)
-            tool = await mcp.get_tool("address_to_coordinates")
-            coord_result = await tool.fn(address)
+            # MCP 내부에서 다른 도구 호출 - 직접 함수 호출 방식 (안전)
+            coord_result = await address_to_coordinates(address)
             if not coord_result["success"]:
                 return coord_result
             
@@ -284,9 +283,8 @@ async def find_nearby_facilities(lat: float = None, lon: float = None, address: 
                 "message": "address 또는 lat, lon 파라미터를 제공해주세요"
             }
         
-        # 네이버 API로 주소를 좌표로 변환 (MCP 도구에서 원본 함수 호출)
-        tool = await mcp.get_tool("address_to_coordinates")
-        coord_result = await tool.fn(address)
+        # MCP 내부에서 다른 도구 호출 - 직접 함수 호출 방식 (안전)
+        coord_result = await address_to_coordinates(address)
         if not coord_result["success"]:
             return coord_result
         

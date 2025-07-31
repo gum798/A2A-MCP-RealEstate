@@ -122,8 +122,8 @@
                     </div>
 
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <button type="submit" class="btn btn-success btn-lg me-md-2" 
-                                onclick="showLoading('recommend-btn')" id="recommend-btn">
+                        <button type="button" class="btn btn-success btn-lg me-md-2" 
+                                onclick="recommendProperty()" id="recommend-btn">
                             <i class="fas fa-magic"></i> 종합 추천 받기
                         </button>
                     </div>
@@ -216,6 +216,105 @@ function getFormData() {
     };
 }
 
+// 폼 유효성 검사
+function validateForm(data) {
+    const errors = [];
+    
+    if (!data.address) errors.push('주소를 입력해주세요.');
+    if (!data.price || data.price <= 0) errors.push('가격을 올바르게 입력해주세요.');
+    if (!data.area || data.area <= 0) errors.push('전용면적을 올바르게 입력해주세요.');
+    if (!data.floor || data.floor <= 0) errors.push('층수를 올바르게 입력해주세요.');
+    if (!data.total_floor || data.total_floor <= 0) errors.push('총 층수를 올바르게 입력해주세요.');
+    if (!data.building_year || data.building_year < 1950) errors.push('건축년도를 올바르게 입력해주세요.');
+    if (!data.property_type) errors.push('부동산 유형을 선택해주세요.');
+    if (!data.deal_type) errors.push('거래 유형을 선택해주세요.');
+    if (data.floor > data.total_floor) errors.push('층수는 총 층수보다 클 수 없습니다.');
+    
+    return errors;
+}
+
+// 종합 추천
+async function recommendProperty() {
+    const data = getFormData();
+    const errors = validateForm(data);
+    
+    if (errors.length > 0) {
+        alert('입력 오류:\n' + errors.join('\n'));
+        return;
+    }
+    
+    const button = document.getElementById('recommend-btn');
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 분석 중...';
+    
+    // 디버깅용 상태 표시
+    console.log('추천 분석 시작:', new Date().toLocaleTimeString());
+    
+    // 진행 상태 표시를 위한 메시지
+    let progressMessages = [
+        '투자가치 분석 중...',
+        '삶의질 평가 중...',
+        '종합 분석 중...',
+        '결과 생성 중...'
+    ];
+    let currentStep = 0;
+    
+    const progressInterval = setInterval(() => {
+        if (currentStep < progressMessages.length) {
+            button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${progressMessages[currentStep]}`;
+            console.log('진행 상태:', progressMessages[currentStep]);
+            currentStep++;
+        }
+    }, 3000);
+    
+    try {
+        // 타임아웃을 포함한 fetch 요청
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30초 타임아웃
+        
+        const response = await fetch('/web/api/agent/recommend', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('Analysis result:', result);
+        showRecommendationResult(result);
+    } catch (error) {
+        console.error('Recommendation failed:', error);
+        console.error('Error details:', error.stack);
+        
+        let errorMessage = '추천 분석 중 오류가 발생했습니다: ';
+        if (error.name === 'AbortError') {
+            errorMessage += '요청 시간이 초과되었습니다. 네트워크 연결을 확인해주세요.';
+        } else if (error.message.includes('Failed to fetch')) {
+            errorMessage += '서버와 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.';
+        } else {
+            errorMessage += error.message;
+        }
+        
+        alert(errorMessage);
+    } finally {
+        clearInterval(progressInterval);
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-magic"></i> 종합 추천 받기';
+        console.log('추천 분석 완료:', new Date().toLocaleTimeString());
+    }
+}
+
 // 투자가치 분석
 async function analyzeInvestment() {
     const data = getFormData();
@@ -226,19 +325,41 @@ async function analyzeInvestment() {
     }
     
     try {
+        // 타임아웃을 포함한 fetch 요청
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30초 타임아웃
+        
         const response = await fetch('/web/api/agent/investment', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(data)
+            body: JSON.stringify(data),
+            signal: controller.signal
         });
         
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const result = await response.json();
+        console.log('투자가치 분석 결과:', result);
         showAnalysisResult('투자가치 분석 결과', result);
     } catch (error) {
-        console.error('Analysis failed:', error);
-        alert('분석 중 오류가 발생했습니다.');
+        console.error('Investment analysis failed:', error);
+        
+        let errorMessage = '투자가치 분석 중 오류가 발생했습니다: ';
+        if (error.name === 'AbortError') {
+            errorMessage += '요청 시간이 초과되었습니다.';
+        } else if (error.message.includes('Failed to fetch')) {
+            errorMessage += '서버와 연결할 수 없습니다.';
+        } else {
+            errorMessage += error.message;
+        }
+        
+        alert(errorMessage);
     }
 }
 
@@ -252,20 +373,239 @@ async function analyzeLifeQuality() {
     }
     
     try {
+        // 타임아웃을 포함한 fetch 요청
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30초 타임아웃
+        
         const response = await fetch('/web/api/agent/life-quality', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(data)
+            body: JSON.stringify(data),
+            signal: controller.signal
         });
         
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const result = await response.json();
+        console.log('삶의질 분석 결과:', result);
         showAnalysisResult('삶의질 분석 결과', result);
     } catch (error) {
-        console.error('Analysis failed:', error);
-        alert('분석 중 오류가 발생했습니다.');
+        console.error('Life quality analysis failed:', error);
+        
+        let errorMessage = '삶의질 분석 중 오류가 발생했습니다: ';
+        if (error.name === 'AbortError') {
+            errorMessage += '요청 시간이 초과되었습니다.';
+        } else if (error.message.includes('Failed to fetch')) {
+            errorMessage += '서버와 연결할 수 없습니다.';
+        } else {
+            errorMessage += error.message;
+        }
+        
+        alert(errorMessage);
     }
+}
+
+// 종합 추천 결과 표시
+function showRecommendationResult(result) {
+    const resultArea = document.getElementById('analysis-result');
+    const resultContent = document.getElementById('analysis-content');
+    
+    let html = '<h5><i class="fas fa-magic"></i> 종합 추천 결과</h5>';
+    
+    // 디버깅용 로그 추가
+    console.log('Recommendation result:', result);
+    
+    if (result.success && result.data) {
+        html += '<div class="alert alert-success">종합 추천 분석이 성공적으로 완료되었습니다.</div>';
+        
+        // 안전한 데이터 접근
+        const evaluation = result.data.evaluation || {};
+        const recommendation = result.data.recommendation || {};
+        const propertyInfo = result.data.property_info || {};
+        
+        // 매물 정보 표시
+        if (propertyInfo.address) {
+            html += `
+                <div class="alert alert-info">
+                    <strong>분석 매물:</strong> ${propertyInfo.address} | 
+                    ${propertyInfo.property_type} ${propertyInfo.deal_type} | 
+                    ${propertyInfo.price ? propertyInfo.price.toLocaleString() + '만원' : 'N/A'} | 
+                    ${propertyInfo.area}㎡ | 
+                    ${propertyInfo.floor}층
+                </div>
+            `;
+        }
+        
+        // 종합 점수 및 추천 여부
+        if (evaluation.final_score !== undefined) {
+            html += `
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card border-success">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0">종합 추천 점수</h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <h2 class="text-success">${evaluation.final_score}점</h2>
+                                <span class="badge score-badge grade-${(evaluation.final_grade || 'C').charAt(0)}">${evaluation.final_grade || 'C'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card ${recommendation.recommended ? 'border-primary' : 'border-warning'}">
+                            <div class="card-header ${recommendation.recommended ? 'bg-primary text-white' : 'bg-warning text-dark'}">
+                                <h6 class="mb-0">추천 결과</h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <h3 class="${recommendation.recommended ? 'text-primary' : 'text-warning'}">
+                                    ${recommendation.recommended ? '추천' : '보류'}
+                                </h3>
+                                <p class="small text-muted">${recommendation.reason || '분석 완료'}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 투자가치 vs 삶의질 비교
+        const investmentEval = evaluation.investment_evaluation || {};
+        const lifeQualityEval = evaluation.life_quality_evaluation || {};
+        
+        if (investmentEval.total_score !== undefined || lifeQualityEval.total_score !== undefined) {
+            html += '<div class="row mb-4">';
+            
+            // 투자가치 평가
+            if (investmentEval.total_score !== undefined) {
+                const invDetailScores = investmentEval.detail_scores || {};
+                html += `
+                    <div class="col-md-6">
+                        <div class="card border-info">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0">투자가치 평가</h6>
+                            </div>
+                            <div class="card-body">
+                                <h4 class="text-info">${investmentEval.total_score}점 (${investmentEval.grade || 'C'})</h4>
+                                <div class="progress mb-2">
+                                    <div class="progress-bar bg-info" style="width: ${investmentEval.total_score}%"></div>
+                                </div>
+                                <small class="text-muted">
+                                    가격: ${invDetailScores.price_score || 0}점 |
+                                    교통: ${invDetailScores.transport_score || 0}점 |
+                                    미래: ${invDetailScores.future_score || 0}점
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 삶의질 평가
+            if (lifeQualityEval.total_score !== undefined) {
+                const lifeDetailScores = lifeQualityEval.detail_scores || {};
+                html += `
+                    <div class="col-md-6">
+                        <div class="card border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="mb-0">삶의질 평가</h6>
+                            </div>
+                            <div class="card-body">
+                                <h4 class="text-warning">${lifeQualityEval.total_score}점 (${lifeQualityEval.grade || 'C'})</h4>
+                                <div class="progress mb-2">
+                                    <div class="progress-bar bg-warning" style="width: ${lifeQualityEval.total_score}%"></div>
+                                </div>
+                                <small class="text-muted">
+                                    환경: ${lifeDetailScores.environment_score || 0}점 |
+                                    편의: ${lifeDetailScores.convenience_score || 0}점 |
+                                    안전: ${lifeDetailScores.safety_score || 0}점 |
+                                    교육: ${lifeDetailScores.education_score || 0}점 |
+                                    문화: ${lifeDetailScores.culture_score || 0}점
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+        }
+        
+        // 장단점 분석
+        const pros = recommendation.pros || [];
+        const cons = recommendation.cons || [];
+        
+        if (pros.length > 0 || cons.length > 0 || Object.keys(recommendation).length > 0) {
+            html += `
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card border-success">
+                            <div class="card-header text-success">
+                                <h6 class="mb-0"><i class="fas fa-thumbs-up"></i> 장점</h6>
+                            </div>
+                            <div class="card-body">
+                                ${pros.length > 0 
+                                    ? pros.map(pro => `<div class="mb-1"><i class="fas fa-check text-success"></i> ${pro}</div>`).join('')
+                                    : '<div class="text-muted">분석 중입니다...</div>'
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-danger">
+                            <div class="card-header text-danger">
+                                <h6 class="mb-0"><i class="fas fa-thumbs-down"></i> 단점</h6>
+                            </div>
+                            <div class="card-body">
+                                ${cons.length > 0 
+                                    ? cons.map(con => `<div class="mb-1"><i class="fas fa-times text-danger"></i> ${con}</div>`).join('')
+                                    : '<div class="text-muted">분석 중입니다...</div>'
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 에러 상황 처리를 위한 기본 정보 표시
+        if (!evaluation.final_score && !investmentEval.total_score && !lifeQualityEval.total_score) {
+            html += `
+                <div class="alert alert-warning">
+                    <h6><i class="fas fa-exclamation-triangle"></i> 부분적 분석 결과</h6>
+                    <p>일부 분석 기능에서 오류가 발생했을 수 있습니다. 현재 네이버 Maps API 인증 문제로 인해 위치 분석에 제한이 있습니다.</p>
+                    <p><strong>받은 데이터:</strong></p>
+                    <pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 12px; max-height: 200px; overflow-y: auto;">${JSON.stringify(result, null, 2)}</pre>
+                </div>
+            `;
+        }
+        
+    } else {
+        html += '<div class="alert alert-danger">';
+        html += '<h6><i class="fas fa-exclamation-triangle"></i> 추천 분석 오류</h6>';
+        html += '<p><strong>오류:</strong> ' + (result.error || 'Unknown error') + '</p>';
+        html += '<p><strong>메시지:</strong> ' + (result.message || 'No message') + '</p>';
+        
+        // 상세 디버깅 정보가 있다면 표시
+        if (result.traceback) {
+            html += '<p><strong>상세 오류:</strong></p>';
+            html += '<pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 12px; max-height: 200px; overflow-y: auto;">' + result.traceback + '</pre>';
+        }
+        
+        // 전체 응답 JSON도 표시
+        html += '<p><strong>전체 응답:</strong></p>';
+        html += '<pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 12px; max-height: 200px; overflow-y: auto;">' + JSON.stringify(result, null, 2) + '</pre>';
+        html += '</div>';
+    }
+    
+    resultContent.innerHTML = html;
+    resultArea.classList.remove('d-none');
+    resultArea.scrollIntoView({ behavior: 'smooth' });
 }
 
 // 분석 결과 표시
@@ -278,9 +618,10 @@ function showAnalysisResult(title, result) {
     if (result.success) {
         html += '<div class="alert alert-success">분석이 성공적으로 완료되었습니다.</div>';
         
-        // 결과 데이터 포맷팅
-        if (result.data.investment_score) {
-            const score = result.data.investment_score;
+        // 결과 데이터 포맷팅 - 개별 분석 결과 처리
+        if (result.data.total_score !== undefined && result.data.detail_scores && result.data.detail_scores.price_score !== undefined) {
+            // 투자가치 분석 결과
+            const score = result.data;
             html += `
                 <div class="row">
                     <div class="col-md-6">
@@ -298,11 +639,11 @@ function showAnalysisResult(title, result) {
                         <div class="card border-secondary">
                             <div class="card-header">세부 점수</div>
                             <div class="card-body">
-                                <div class="mb-2">가격: ${score.price_score}점</div>
-                                <div class="mb-2">면적: ${score.area_score}점</div>
-                                <div class="mb-2">층수: ${score.floor_score}점</div>
-                                <div class="mb-2">교통: ${score.transport_score}점</div>
-                                <div class="mb-0">발전가능성: ${score.future_potential_score}점</div>
+                                <div class="mb-2">가격: ${score.detail_scores.price_score}점</div>
+                                <div class="mb-2">면적: ${score.detail_scores.area_score}점</div>
+                                <div class="mb-2">층수: ${score.detail_scores.floor_score}점</div>
+                                <div class="mb-2">교통: ${score.detail_scores.transport_score}점</div>
+                                <div class="mb-0">미래가치: ${score.detail_scores.future_score}점</div>
                             </div>
                         </div>
                     </div>
@@ -310,8 +651,9 @@ function showAnalysisResult(title, result) {
             `;
         }
         
-        if (result.data.life_quality_score) {
-            const score = result.data.life_quality_score;
+        else if (result.data.total_score !== undefined && result.data.detail_scores && result.data.detail_scores.environment_score !== undefined) {
+            // 삶의질 분석 결과
+            const score = result.data;
             html += `
                 <div class="row mt-3">
                     <div class="col-md-6">
@@ -329,11 +671,11 @@ function showAnalysisResult(title, result) {
                         <div class="card border-secondary">
                             <div class="card-header">세부 점수</div>
                             <div class="card-body">
-                                <div class="mb-2">환경: ${score.environment_score}점</div>
-                                <div class="mb-2">편의성: ${score.convenience_score}점</div>
-                                <div class="mb-2">안전: ${score.safety_score}점</div>
-                                <div class="mb-2">교육: ${score.education_score}점</div>
-                                <div class="mb-0">문화: ${score.culture_score}점</div>
+                                <div class="mb-2">환경: ${score.detail_scores.environment_score}점</div>
+                                <div class="mb-2">편의성: ${score.detail_scores.convenience_score}점</div>
+                                <div class="mb-2">안전: ${score.detail_scores.safety_score}점</div>
+                                <div class="mb-2">교육: ${score.detail_scores.education_score}점</div>
+                                <div class="mb-0">문화: ${score.detail_scores.culture_score}점</div>
                             </div>
                         </div>
                     </div>
