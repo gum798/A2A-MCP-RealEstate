@@ -186,6 +186,14 @@ async def address_to_coordinates(address: str) -> Dict[str, Any]:
         }
     
     try:
+        # Check if using IAM credentials (need to convert to proper API credentials)
+        if NAVER_CLIENT_ID.startswith("ncp_iam_"):
+            return {
+                "success": False,
+                "error": "NCP IAM 자격 증명이 감지되었습니다. Maps API에는 Application API 키가 필요합니다.",
+                "message": "네이버 클라우드 플랫폼 콘솔에서 Maps → Application 등록 후 Client ID/Secret을 발급받아 사용해주세요."
+            }
+        
         url = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode"
         headers = {
             "X-NCP-APIGW-API-KEY-ID": NAVER_CLIENT_ID,
@@ -256,6 +264,14 @@ async def find_nearby_facilities(lat: float, lon: float, category: str = "편의
             "success": False,
             "error": "네이버 API 키가 설정되지 않았습니다",
             "message": "NAVER_CLIENT_ID, NAVER_CLIENT_SECRET 환경변수를 설정해주세요"
+        }
+    
+    # Check if using IAM credentials (need to convert to proper API credentials)
+    if NAVER_CLIENT_ID.startswith("ncp_iam_"):
+        return {
+            "success": False,
+            "error": "NCP IAM 자격 증명이 감지되었습니다. Maps API에는 Application API 키가 필요합니다.",
+            "message": "네이버 클라우드 플랫폼 콘솔에서 Maps → Application 등록 후 Client ID/Secret을 발급받아 사용해주세요."
         }
     
     try:
