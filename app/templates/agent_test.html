@@ -30,7 +30,7 @@
                                 <div class="row g-2">
                                     <div class="col-md-3">
                                         <select class="form-select" id="sido" name="sido" required>
-                                            <option value="">시도 선택</option>
+                                            <option value="">전체</option>
                                             <option value="11">서울특별시</option>
                                             <option value="26">부산광역시</option>
                                             <option value="27">대구광역시</option>
@@ -47,6 +47,8 @@
                                             <option value="47">경상북도</option>
                                             <option value="48">경상남도</option>
                                             <option value="50">제주특별자치도</option>
+                                            <option value="51">강원특별자치도</option>
+                                            <option value="52">전북특별자치도</option>
                                         </select>
                                     </div>
                                     <div class="col-md-3">
@@ -60,8 +62,9 @@
                                         </select>
                                     </div>
                                     <div class="col-md-3">
-                                        <input type="text" class="form-control" id="complex_name" name="complex_name" 
-                                               placeholder="단지명 (선택사항)">
+                                        <select class="form-select" id="complex_name" name="complex_name" disabled>
+                                            <option value="">단지명 선택 (선택사항)</option>
+                                        </select>
                                     </div>
                                 </div>
                                 <div class="form-text">시도와 시군구는 필수, 읍면동과 단지명은 선택사항입니다.</div>
@@ -109,11 +112,25 @@
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="price" class="form-label">가격 (만원)</label>
+                                <label for="price_range" class="form-label">가격 범위 (만원)</label>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <input type="number" class="form-control" id="price_min" name="price_min" 
+                                               min="10" max="1000000" placeholder="최소가격" value="10">
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="number" class="form-control" id="price_max" name="price_max" 
+                                               min="10" max="1000000" placeholder="최대가격" value="1000000">
+                                    </div>
+                                </div>
+                                <div class="form-text">실거래가 검색 범위를 만원 단위로 설정</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="price" class="form-label">개별 매물 가격 (분석용)</label>
                                 <input type="number" class="form-control" id="price" name="price" 
-                                       min="1000" max="1000000" placeholder="예: 80000" required>
-                                <div class="form-text">매매가 또는 전세가를 만원 단위로 입력</div>
-                                <div class="invalid-feedback">가격을 입력해주세요.</div>
+                                       min="1000" max="1000000" placeholder="예: 80000">
+                                <div class="form-text">투자가치 분석용 개별 매물 가격</div>
                             </div>
                         </div>
                     </div>
@@ -121,10 +138,20 @@
                     <div class="row">
                         <div class="col-md-4">
                             <div class="mb-3">
-                                <label for="area" class="form-label">전용면적 (㎡)</label>
+                                <label for="area_range" class="form-label">전용면적 범위</label>
+                                <select class="form-select" id="area_range" name="area_range">
+                                    <option value="">전체 면적</option>
+                                    <option value="60-85">60㎡ ~ 85㎡ (18평 ~ 25평)</option>
+                                    <option value="85-100">85㎡ ~ 100㎡ (25평 ~ 30평)</option>
+                                    <option value="100-130">100㎡ ~ 130㎡ (30평 ~ 39평)</option>
+                                    <option value="130-165">130㎡ ~ 165㎡ (39평 ~ 50평)</option>
+                                    <option value="165-">165㎡ 이상 (50평 이상)</option>
+                                </select>
+                                <div class="form-text">범위를 선택하거나 직접 입력</div>
+                            </div>
+                            <div class="mb-3">
                                 <input type="number" class="form-control" id="area" name="area" 
-                                       step="0.01" min="10" max="500" placeholder="예: 84.32" required>
-                                <div class="invalid-feedback">전용면적을 입력해주세요.</div>
+                                       step="0.01" min="10" max="500" placeholder="또는 직접 입력 (예: 84.32)">
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -155,6 +182,19 @@
                             </div>
                         </div>
                         <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">실거래가 조회 기간</label>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <input type="date" class="form-control" id="date_from" name="date_from">
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="date" class="form-control" id="date_to" name="date_to">
+                                    </div>
+                                </div>
+                                <div class="form-text">조회할 실거래가 기간 (기본: 최근 1개월)</div>
+                            </div>
+                            
                             <div class="mb-3">
                                 <label for="user_preference" class="form-label">사용자 성향</label>
                                 <select class="form-select" id="user_preference" name="user_preference" required>
@@ -807,5 +847,270 @@ document.getElementById('total_floor').addEventListener('input', function() {
         document.getElementById('floor').setCustomValidity('');
     }
 });
+
+// 지역 선택 관련 데이터 (캐시용)
+let regionData = {};
+
+// 페이지 로드 시 시도 목록 로드
+document.addEventListener('DOMContentLoaded', async function() {
+    await loadSidoList();
+    
+    // 기본 날짜 설정 (최근 1개월)
+    const today = new Date();
+    const oneMonthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+    
+    document.getElementById('date_from').value = oneMonthAgo.toISOString().split('T')[0];
+    document.getElementById('date_to').value = today.toISOString().split('T')[0];
+});
+
+// 시도 목록 로드
+async function loadSidoList() {
+    try {
+        const response = await fetch('/web/api/regions/sido');
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+            const sidoSelect = document.getElementById('sido');
+            sidoSelect.innerHTML = '<option value="">시도 선택</option>';
+            
+            result.data.forEach(sido => {
+                const option = document.createElement('option');
+                option.value = sido.code;
+                option.textContent = sido.name;
+                sidoSelect.appendChild(option);
+                
+                // 캐시에 저장
+                if (!regionData[sido.code]) {
+                    regionData[sido.code] = { name: sido.name, districts: {} };
+                }
+            });
+        }
+    } catch (error) {
+        console.error('시도 목록 로드 오류:', error);
+    }
+}
+
+// 시도 선택 시 시군구 업데이트
+document.getElementById('sido').addEventListener('change', async function() {
+    const sidoCode = this.value;
+    const sigunguSelect = document.getElementById('sigungu');
+    const eupmyeondongSelect = document.getElementById('eupmyeondong');
+    
+    // 시군구 초기화
+    sigunguSelect.innerHTML = '<option value="">시군구 선택</option>';
+    eupmyeondongSelect.innerHTML = '<option value="">읽면동 선택 (선택사항)</option>';
+    
+    if (sidoCode) {
+        try {
+            sigunguSelect.innerHTML = '<option value="">로딩 중...</option>';
+            sigunguSelect.disabled = true;
+            
+            const response = await fetch(`/web/api/regions/sigungu/${sidoCode}`);
+            const result = await response.json();
+            
+            sigunguSelect.innerHTML = '<option value="">시군구 선택</option>';
+            
+            if (result.success && result.data) {
+                result.data.forEach(sigungu => {
+                    const option = document.createElement('option');
+                    option.value = sigungu.code;
+                    option.textContent = sigungu.name;
+                    sigunguSelect.appendChild(option);
+                    
+                    // 캐시에 저장
+                    if (regionData[sidoCode]) {
+                        regionData[sidoCode].districts[sigungu.code] = sigungu.name;
+                    }
+                });
+                
+                sigunguSelect.disabled = false;
+            } else {
+                sigunguSelect.innerHTML = '<option value="">조회 실패</option>';
+            }
+        } catch (error) {
+            console.error('시군구 목록 로드 오류:', error);
+            sigunguSelect.innerHTML = '<option value="">오류 발생</option>';
+        }
+    } else {
+        sigunguSelect.disabled = true;
+        eupmyeondongSelect.disabled = true;
+    }
+});
+
+// 시군구 선택 시 읍면동 로드
+document.getElementById('sigungu').addEventListener('change', async function() {
+    const sigunguCode = this.value;
+    const eupmyeondongSelect = document.getElementById('eupmyeondong');
+    const complexSelect = document.getElementById('complex_name');
+    
+    eupmyeondongSelect.innerHTML = '<option value="">읍면동 선택 (선택사항)</option>';
+    complexSelect.innerHTML = '<option value="">단지명 선택 (선택사항)</option>';
+    complexSelect.disabled = true;
+    
+    if (sigunguCode) {
+        try {
+            eupmyeondongSelect.innerHTML = '<option value="">로딩 중...</option>';
+            eupmyeondongSelect.disabled = true;
+            
+            const response = await fetch(`/web/api/regions/emd/${sigunguCode}`);
+            const result = await response.json();
+            
+            eupmyeondongSelect.innerHTML = '<option value="">읍면동 선택 (선택사항)</option>';
+            
+            if (result.success && result.data && result.data.length > 0) {
+                result.data.forEach(emd => {
+                    const option = document.createElement('option');
+                    option.value = emd.name;
+                    option.textContent = emd.name;
+                    eupmyeondongSelect.appendChild(option);
+                });
+                
+                eupmyeondongSelect.disabled = false;
+            } else {
+                // 읍면동 데이터가 없어도 필수가 아니므로 활성화
+                eupmyeondongSelect.disabled = false;
+            }
+        } catch (error) {
+            console.error('읍면동 목록 로드 오류:', error);
+            eupmyeondongSelect.innerHTML = '<option value="">오류 발생</option>';
+            eupmyeondongSelect.disabled = false;
+        }
+    } else {
+        eupmyeondongSelect.disabled = true;
+    }
+});
+
+// 읍면동 선택 시 단지명 로드
+document.getElementById('eupmyeondong').addEventListener('change', async function() {
+    const emdName = this.value;
+    const sigunguCode = document.getElementById('sigungu').value;
+    const complexSelect = document.getElementById('complex_name');
+    
+    complexSelect.innerHTML = '<option value="">단지명 선택 (선택사항)</option>';
+    
+    if (sigunguCode && emdName) {
+        try {
+            complexSelect.innerHTML = '<option value="">로딩 중...</option>';
+            complexSelect.disabled = true;
+            
+            const response = await fetch(`/web/api/regions/complex/${sigunguCode}?emd_name=${encodeURIComponent(emdName)}`);
+            const result = await response.json();
+            
+            complexSelect.innerHTML = '<option value="">단지명 선택 (선택사항)</option>';
+            
+            if (result.success && result.data && result.data.length > 0) {
+                result.data.forEach(complex => {
+                    const option = document.createElement('option');
+                    option.value = complex.name;
+                    option.textContent = complex.name;
+                    complexSelect.appendChild(option);
+                });
+                
+                complexSelect.disabled = false;
+            } else {
+                // 단지 데이터가 없어도 활성화 (직접 입력 가능)
+                complexSelect.disabled = false;
+            }
+        } catch (error) {
+            console.error('단지 목록 로드 오류:', error);
+            complexSelect.innerHTML = '<option value="">오류 발생</option>';
+            complexSelect.disabled = false;
+        }
+    } else {
+        complexSelect.disabled = true;
+    }
+});
+
+// 도로명 주소 검색 기능
+document.getElementById('search_address').addEventListener('click', async function() {
+    const roadAddress = document.getElementById('road_address').value.trim();
+    
+    if (!roadAddress) {
+        alert('도로명주소를 입력해주세요.');
+        return;
+    }
+    
+    try {
+        // 네이버 지도 API를 통한 지역코드 변환 (서버사이드에서 처리)
+        const response = await fetch('/web/api/geocode', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address: roadAddress })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            
+            if (result.success && result.region_info) {
+                // 자동으로 지역 선택 설정
+                const regionInfo = result.region_info;
+                
+                if (regionInfo.sido_code) {
+                    document.getElementById('sido').value = regionInfo.sido_code;
+                    document.getElementById('sido').dispatchEvent(new Event('change'));
+                    
+                    setTimeout(() => {
+                        if (regionInfo.sigungu_code) {
+                            document.getElementById('sigungu').value = regionInfo.sigungu_code;
+                        }
+                    }, 100);
+                }
+                
+                alert('지역이 자동으로 설정되었습니다.');
+            } else {
+                alert('주소를 찾을 수 없습니다.');
+            }
+        } else {
+            alert('주소 검색 중 오류가 발생했습니다.');
+        }
+    } catch (error) {
+        console.error('Address search error:', error);
+        alert('주소 검색 중 오류가 발생했습니다.');
+    }
+});
+
+// 폼 데이터 수집 함수 업데이트
+function getFormData() {
+    const sido = document.getElementById('sido').value;
+    const sigungu = document.getElementById('sigungu').value;
+    const eupmyeondong = document.getElementById('eupmyeondong').value;
+    const complexName = document.getElementById('complex_name').value;
+    const roadAddress = document.getElementById('road_address').value;
+    
+    // 주소 구성
+    let address = '';
+    if (roadAddress.trim()) {
+        address = roadAddress.trim();
+    } else if (sido && sigungu) {
+        const sidoName = regionData[sido] ? regionData[sido].name : '';
+        const sigunguName = regionData[sido] && regionData[sido].districts[sigungu] ? 
+                          regionData[sido].districts[sigungu] : '';
+        address = `${sidoName} ${sigunguName}`;
+        if (eupmyeondong) {
+            address += ` ${eupmyeondong}`;
+        }
+    }
+    
+    return {
+        address: address,
+        sido_code: sido,
+        sigungu_code: sigungu,
+        eupmyeondong: eupmyeondong,
+        complex_name: complexName,
+        property_type: document.getElementById('property_type').value,
+        deal_type: document.getElementById('deal_type').value,
+        price: parseInt(document.getElementById('price').value) || 0,
+        price_min: parseInt(document.getElementById('price_min').value) || 10,
+        price_max: parseInt(document.getElementById('price_max').value) || 1000000,
+        area: parseFloat(document.getElementById('area').value) || 0,
+        area_range: document.getElementById('area_range').value,
+        date_from: document.getElementById('date_from').value,
+        date_to: document.getElementById('date_to').value,
+        floor: parseInt(document.getElementById('floor').value) || 0,
+        total_floor: parseInt(document.getElementById('total_floor').value) || 0,
+        building_year: parseInt(document.getElementById('building_year').value) || new Date().getFullYear(),
+        user_preference: document.getElementById('user_preference').value
+    };
+}
 </script>
 {% endblock %}

@@ -116,8 +116,8 @@ async def find_nearest_subway_stations(address: str, lat: float = None, lon: flo
                     "message": "address 또는 lat, lon 파라미터를 제공해주세요"
                 }
             
-            # MCP 내부에서 다른 도구 호출 - 직접 함수 호출 방식 (안전)
-            coord_result = await address_to_coordinates(address)
+            # MCP 내부에서 다른 도구 호출 - 실제 함수 호출 방식 (FastMCP 호환)
+            coord_result = await address_to_coordinates.fn(address)
             if not coord_result["success"]:
                 return coord_result
             
@@ -283,8 +283,8 @@ async def find_nearby_facilities(lat: float = None, lon: float = None, address: 
                 "message": "address 또는 lat, lon 파라미터를 제공해주세요"
             }
         
-        # MCP 내부에서 다른 도구 호출 - 직접 함수 호출 방식 (안전)
-        coord_result = await address_to_coordinates(address)
+        # MCP 내부에서 다른 도구 호출 - 실제 함수 호출 방식 (FastMCP 호환)
+        coord_result = await address_to_coordinates.fn(address)
         if not coord_result["success"]:
             return coord_result
         

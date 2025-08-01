@@ -41,13 +41,14 @@ class FastMCPClient:
         if self.module_name == "app.mcp.real_estate_recommendation_mcp":
             from ..mcp import real_estate_recommendation_mcp
             return {
-                "get_real_estate_data": real_estate_recommendation_mcp.get_real_estate_data,
+                "get_real_estate_data": real_estate_recommendation_mcp.get_real_estate_data_advanced,
                 "analyze_location": real_estate_recommendation_mcp.analyze_location,
                 "evaluate_investment_value": real_estate_recommendation_mcp.evaluate_investment_value,
                 "evaluate_life_quality": real_estate_recommendation_mcp.evaluate_life_quality,
                 "recommend_property": real_estate_recommendation_mcp.recommend_property,
                 "get_regional_price_statistics": real_estate_recommendation_mcp.get_regional_price_statistics,
-                "compare_similar_properties": real_estate_recommendation_mcp.compare_similar_properties
+                "compare_similar_properties": real_estate_recommendation_mcp.compare_similar_properties,
+                "search_by_road_address": real_estate_recommendation_mcp.search_by_road_address
             }
         elif self.module_name == "app.mcp.location_service":
             from ..mcp import location_service
@@ -95,13 +96,25 @@ class FastMCPClient:
                         logger.info(f"Tool 객체 타입: {type(tool_func)}")
                         logger.info(f"Tool 객체 속성: {[attr for attr in dir(tool_func) if not attr.startswith('_')]}")
                         
-                        # FastMCP FunctionTool 특별 처리 - fn 메서드 우선 시도 (dict 반환)
-                        if hasattr(tool_func, 'fn') and callable(tool_func.fn):
+                        # FastMCP FunctionTool 특별 처리 - fn 속성에서 실제 함수 추출
+                        if hasattr(tool_func, 'fn'):
                             try:
-                                result = await tool_func.fn(**arguments)
-                                logger.info("get_tools()[].fn 방법 성공")
+                                # FunctionTool의 fn 속성은 실제 async 함수
+                                actual_func = tool_func.fn
+                                logger.info(f"actual_func type: {type(actual_func)}")
+                                logger.info(f"actual_func callable: {callable(actual_func)}")
+                                logger.info(f"actual_func name: {getattr(actual_func, '__name__', 'No name')}")
+                                logger.info(f"arguments: {arguments}")
+                                
+                                if callable(actual_func):
+                                    result = await actual_func(**arguments)
+                                    logger.info(f"get_tools()[].fn 방법 성공, result: {result}")
+                                else:
+                                    logger.warning("tool_func.fn이 callable하지 않음")
                             except Exception as e:
-                                logger.warning(f"get_tools()[].fn 방법 실패: {e}")
+                                logger.error(f"get_tools()[].fn 방법 실패: {e}")
+                                import traceback
+                                logger.error(f"Full traceback: {traceback.format_exc()}")
                         
                         elif hasattr(tool_func, 'run') and callable(tool_func.run):
                             try:
@@ -162,11 +175,15 @@ class FastMCPClient:
                         logger.info(f"Get_tool 결과 타입: {type(tool)}")
                         logger.info(f"Get_tool 결과 속성: {[attr for attr in dir(tool) if not attr.startswith('_')]}")
                         
-                        # fn 메서드 우선 시도 (dict 반환)
-                        if hasattr(tool, 'fn') and callable(tool.fn):
+                        # fn 속성에서 실제 함수 추출
+                        if hasattr(tool, 'fn'):
                             try:
-                                result = await tool.fn(**arguments)
-                                logger.info("get_tool().fn 방법 성공")
+                                actual_func = tool.fn
+                                if callable(actual_func):
+                                    result = await actual_func(**arguments)
+                                    logger.info("get_tool().fn 방법 성공")
+                                else:
+                                    logger.warning("get_tool().fn이 callable하지 않음")
                             except Exception as e:
                                 logger.warning(f"get_tool().fn 방법 실패: {e}")
                         
@@ -212,7 +229,12 @@ class FastMCPClient:
                 function_map = await self._get_direct_function_map()
                 if tool_name in function_map:
                     try:
-                        result = await function_map[tool_name](**arguments)
+                        func = function_map[tool_name]
+                        # FunctionTool 객체인 경우 실제 함수 추출
+                        if hasattr(func, 'fn') and callable(func.fn):
+                            result = await func.fn(**arguments)
+                        else:
+                            result = await func(**arguments)
                         logger.info("직접 함수 매핑 방법 성공")
                     except Exception as e:
                         logger.warning(f"직접 함수 매핑 방법 실패: {e}")

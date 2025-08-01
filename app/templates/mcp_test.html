@@ -23,32 +23,204 @@
             </div>
             <div class="card-body">
                 <form id="apartment-form" class="needs-validation" novalidate>
+                    <!-- 지역 선택 -->
                     <div class="mb-3">
-                        <label for="lawd_cd" class="form-label">지역코드</label>
-                        <select class="form-select" id="lawd_cd" name="lawd_cd" required>
-                            <option value="">지역을 선택하세요</option>
-                            <option value="11680">서울 강남구</option>
-                            <option value="11500">서울 강서구</option>
-                            <option value="11620">서울 관악구</option>
-                            <option value="11740">서울 강동구</option>
-                            <option value="41110">경기 수원시</option>
-                            <option value="41130">경기 성남시</option>
-                            <option value="41460">경기 용인시</option>
-                        </select>
-                        <div class="invalid-feedback">지역을 선택해주세요.</div>
+                        <label class="form-label">지역 선택</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <select class="form-select" id="sido_cd" name="sido_cd" required>
+                                    <option value="">전체</option>
+                                    <option value="11">서울특별시</option>
+                                    <option value="26">부산광역시</option>
+                                    <option value="27">대구광역시</option>
+                                    <option value="28">인천광역시</option>
+                                    <option value="29">광주광역시</option>
+                                    <option value="30">대전광역시</option>
+                                    <option value="31">울산광역시</option>
+                                    <option value="36">세종특별자치시</option>
+                                    <option value="41">경기도</option>
+                                    <option value="43">충청북도</option>
+                                    <option value="44">충청남도</option>
+                                    <option value="45">전라북도</option>
+                                    <option value="46">전라남도</option>
+                                    <option value="47">경상북도</option>
+                                    <option value="48">경상남도</option>
+                                    <option value="50">제주특별자치도</option>
+                                    <option value="51">강원특별자치도</option>
+                                    <option value="52">전북특별자치도</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <select class="form-select" id="sgg_cd" name="sgg_cd" required>
+                                    <option value="">시군구</option>
+                                    <option value="11710">강남구</option>
+                                    <option value="11770">강동구</option>
+                                    <option value="11305">강북구</option>
+                                    <option value="11500">강서구</option>
+                                    <option value="11650">관악구</option>
+                                    <option value="11215">광진구</option>
+                                    <option value="11530">구로구</option>
+                                    <option value="11560">금천구</option>
+                                    <option value="11350">노원구</option>
+                                    <option value="11320">도봉구</option>
+                                    <option value="11230">동대문구</option>
+                                    <option value="11620">동작구</option>
+                                    <option value="11440">마포구</option>
+                                    <option value="11410">서대문구</option>
+                                    <option value="11680">서초구</option>
+                                    <option value="11200">성동구</option>
+                                    <option value="11290">성북구</option>
+                                    <option value="11740">송파구</option>
+                                    <option value="11470">양천구</option>
+                                    <option value="11590">영등포구</option>
+                                    <option value="11170">용산구</option>
+                                    <option value="11380">은평구</option>
+                                    <option value="11110">종로구</option>
+                                    <option value="11140">중구</option>
+                                    <option value="11260">중랑구</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
+                    
+                    <!-- 날짜 범위 -->
                     <div class="mb-3">
-                        <label for="deal_ymd" class="form-label">계약년월</label>
-                        <input type="text" class="form-control" id="deal_ymd" name="deal_ymd" placeholder="202401" 
-                               value="202401" required>
-                        <div class="form-text">YYYYMM 형식으로 입력 (예: 202401)</div>
-                        <div class="invalid-feedback">계약년월을 입력해주세요.</div>
+                        <label class="form-label">조회 기간</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <input type="date" class="form-control" id="date_from" name="date_from">
+                            </div>
+                            <div class="col-6">
+                                <input type="date" class="form-control" id="date_to" name="date_to">
+                            </div>
+                        </div>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100" id="apt-btn">
-                        <i class="fas fa-search"></i> 실거래가 조회
-                    </button>
+                    
+                    <!-- 필터 옵션 -->
+                    <div class="mb-3">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label for="area_range" class="form-label">면적범위</label>
+                                <select class="form-select" id="area_range" name="area_range">
+                                    <option value="">전체</option>
+                                    <option value="60-85">60-85㎡</option>
+                                    <option value="85-100">85-100㎡</option>
+                                    <option value="100-130">100-130㎡</option>
+                                    <option value="130-165">130-165㎡</option>
+                                    <option value="165-">165㎡+</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label for="deal_type" class="form-label">거래유형</label>
+                                <select class="form-select" id="deal_type" name="deal_type">
+                                    <option value="매매">매매</option>
+                                    <option value="전세">전세</option>
+                                    <option value="월세">월세</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 가격 범위 -->
+                    <div class="mb-3">
+                        <label class="form-label">가격범위 (만원)</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <input type="number" class="form-control" id="price_min" name="price_min" 
+                                       placeholder="최소" value="10">
+                            </div>
+                            <div class="col-6">
+                                <input type="number" class="form-control" id="price_max" name="price_max" 
+                                       placeholder="최대" value="1000000">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 추가 필터 -->
+                    <div class="mb-3">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <select class="form-select" id="complex_name" name="complex_name" disabled>
+                                    <option value="">단지명 선택 (선택사항)</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <input type="text" class="form-control" id="emd_name" name="emd_name" 
+                                       placeholder="읍면동 (선택사항)">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary" id="apt-btn">
+                            <i class="fas fa-search"></i> 고급 실거래가 조회
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="loadLegacyForm()">
+                            <i class="fas fa-undo"></i> 기존 방식으로 조회
+                        </button>
+                    </div>
                 </form>
                 <div id="apartment-result" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 도로명 주소 검색 -->
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="fas fa-road"></i> 도로명 주소 검색</h5>
+            </div>
+            <div class="card-body">
+                <form id="road-address-form" class="needs-validation" novalidate>
+                    <div class="mb-3">
+                        <label for="road_address" class="form-label">도로명 주소</label>
+                        <input type="text" class="form-control" id="road_address" name="road_address" 
+                               placeholder="예: 인천 서구 검암로10번길 36" required>
+                        <div class="form-text">시도 시군구 도로명 건물번호 형식으로 입력하세요</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label for="road_date_from" class="form-label">조회 시작일</label>
+                                <input type="text" class="form-control" id="road_date_from" name="road_date_from" 
+                                       placeholder="YYYYMM" value="202506">
+                            </div>
+                            <div class="col-6">
+                                <label for="road_date_to" class="form-label">조회 종료일</label>
+                                <input type="text" class="form-control" id="road_date_to" name="road_date_to" 
+                                       placeholder="YYYYMM" value="202506">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label for="road_property_type" class="form-label">부동산 유형</label>
+                                <select class="form-select" id="road_property_type" name="road_property_type">
+                                    <option value="아파트">아파트</option>
+                                    <option value="연립다세대">연립다세대</option>
+                                    <option value="단독주택">단독주택</option>
+                                    <option value="오피스텔">오피스텔</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label for="road_deal_type" class="form-label">거래 유형</label>
+                                <select class="form-select" id="road_deal_type" name="road_deal_type">
+                                    <option value="매매">매매</option>
+                                    <option value="전세">전세</option>
+                                    <option value="월세">월세</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-danger w-100">
+                        <i class="fas fa-search"></i> 도로명 주소로 검색
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -436,34 +608,45 @@ if (apartmentForm) {
         console.log('📝 [폼 데이터] FormData 생성 완료');
         console.log('📝 [폼 데이터] formData entries:', [...formData.entries()]);
         
-        const lawdCd = formData.get('lawd_cd') || document.getElementById('lawd_cd').value;
-        const dealYmd = formData.get('deal_ymd') || document.getElementById('deal_ymd').value;
+        // 새로운 고급 파라미터 수집
+        const sidoCd = formData.get('sido_cd') || document.getElementById('sido_cd').value;
+        const sggCd = formData.get('sgg_cd') || document.getElementById('sgg_cd').value;
+        const dateFrom = formData.get('date_from') || document.getElementById('date_from').value;
+        const dateTo = formData.get('date_to') || document.getElementById('date_to').value;
+        const areaRange = formData.get('area_range') || document.getElementById('area_range').value;
+        const dealType = formData.get('deal_type') || document.getElementById('deal_type').value;
+        const priceMin = formData.get('price_min') || document.getElementById('price_min').value;
+        const priceMax = formData.get('price_max') || document.getElementById('price_max').value;
+        const complexName = formData.get('complex_name') || document.getElementById('complex_name').value;
+        const emdName = formData.get('emd_name') || document.getElementById('emd_name').value;
         
-        console.log('🏘️ [입력값] lawdCd:', lawdCd);
-        console.log('📅 [입력값] dealYmd:', dealYmd);
+        console.log('🏘️ [입력값] sidoCd:', sidoCd);
+        console.log('🏘️ [입력값] sggCd:', sggCd);
+        console.log('📅 [입력값] dateFrom:', dateFrom);
+        console.log('📅 [입력값] dateTo:', dateTo);
+        console.log('🏢 [입력값] areaRange:', areaRange);
+        console.log('💰 [입력값] dealType:', dealType);
+        console.log('💰 [입력값] priceRange:', priceMin, '-', priceMax);
         
-        // 선택된 옵션 텍스트도 확인
-        const lawdSelect = document.getElementById('lawd_cd');
-        const selectedOption = lawdSelect.options[lawdSelect.selectedIndex];
-        console.log('🏘️ [선택된 지역] 텍스트:', selectedOption ? selectedOption.text : 'none');
-        
-        if (!lawdCd) {
-            console.error('❌ [검증] 지역코드 없음');
-            alert('지역을 선택해주세요');
-            return;
-        }
-        
-        if (!dealYmd) {
-            console.error('❌ [검증] 계약년월 없음');
-            alert('계약년월을 입력해주세요');
+        if (!sidoCd || !sggCd) {
+            console.error('❌ [검증] 지역 정보 없음');
+            alert('시도와 시군구를 선택해주세요');
             return;
         }
         
         const data = {
-            tool_name: 'get_real_estate_data',
+            tool_name: 'get_real_estate_data_advanced',
             parameters: {
-                lawd_cd: lawdCd,
-                deal_ymd: dealYmd,
+                sido_cd: sidoCd,
+                sgg_cd: sggCd,
+                emd_name: emdName,
+                complex_name: complexName,
+                area_range: areaRange,
+                price_range_min: parseInt(priceMin) || 10,
+                price_range_max: parseInt(priceMax) || 1000000,
+                date_from: dateFrom,
+                date_to: dateTo,
+                deal_type: dealType,
                 property_type: '아파트',
                 use_xml_api: false  // CSV 방식 사용
             }
@@ -527,6 +710,36 @@ document.getElementById('subway-form').addEventListener('submit', async function
     }
 });
 
+// 도로명 주소 검색 폼
+document.getElementById('road-address-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const button = e.target.querySelector('button[type="submit"]');
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 검색 중...';
+    button.disabled = true;
+    
+    try {
+        const formData = new FormData(e.target);
+        const data = {
+            tool_name: 'search_by_road_address',
+            parameters: {
+                road_address: formData.get('road_address'),
+                date_from: formData.get('road_date_from'),
+                date_to: formData.get('road_date_to'),
+                property_type: formData.get('road_property_type'),
+                deal_type: formData.get('road_deal_type')
+            }
+        };
+        
+        const result = await makeRequest('/web/api/mcp/test', data);
+        showResult('도로명 주소 검색 결과', result);
+    } finally {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    }
+});
+
 // 편의시설 검색 폼
 document.getElementById('facility-form').addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -575,20 +788,111 @@ document.getElementById('score-form').addEventListener('submit', async function(
     }
 });
 
-// 계약년월 입력을 YYYYMM 형식으로 변환
-document.getElementById('deal_ymd').addEventListener('change', function(e) {
-    const value = e.target.value;
-    if (value) {
-        e.target.setAttribute('data-original', value);
-        // 폼 제출 시 YYYYMM 형식으로 변환
-        e.target.form.addEventListener('submit', function() {
-            const monthInput = document.getElementById('deal_ymd');
-            const dateValue = monthInput.value;
-            if (dateValue) {
-                monthInput.value = dateValue.replace('-', '');
+// 페이지 로드 시 기본값 설정
+document.addEventListener('DOMContentLoaded', function() {
+    // 기본 날짜 설정 (최근 1개월)
+    const today = new Date();
+    const oneMonthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+    
+    const dateFromInput = document.getElementById('date_from');
+    const dateToInput = document.getElementById('date_to');
+    
+    if (dateFromInput && dateToInput) {
+        dateFromInput.value = oneMonthAgo.toISOString().split('T')[0];
+        dateToInput.value = today.toISOString().split('T')[0];
+    }
+    
+    console.log('📅 [초기화] 기본 날짜 설정 완료');
+});
+
+// 기존 방식으로 조회 버튼
+function loadLegacyForm() {
+    const confirmed = confirm('기존 방식(단순 지역코드+년월)으로 전환하시겠습니까?\n현재 입력된 데이터가 초기화됩니다.');
+    
+    if (confirmed) {
+        // 폼 내용을 기존 방식으로 교체
+        const formHtml = `
+            <div class="mb-3">
+                <label for="lawd_cd_legacy" class="form-label">지역코드</label>
+                <select class="form-select" id="lawd_cd_legacy" name="lawd_cd" required>
+                    <option value="">지역을 선택하세요</option>
+                    <option value="11680">서울 강남구</option>
+                    <option value="11710">서울 서초구</option>
+                    <option value="11740">서울 송파구</option>
+                    <option value="11500">서울 강서구</option>
+                    <option value="41131">경기 수원시</option>
+                    <option value="41173">경기 성남시</option>
+                    <option value="41285">경기 평택시</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="deal_ymd_legacy" class="form-label">계약년월</label>
+                <input type="text" class="form-control" id="deal_ymd_legacy" name="deal_ymd" 
+                       placeholder="202401" value="202407" required>
+                <div class="form-text">YYYYMM 형식 (예: 202407)</div>
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary" id="apt-btn">
+                    <i class="fas fa-search"></i> 기존 방식 조회
+                </button>
+                <button type="button" class="btn btn-outline-success" onclick="location.reload()">
+                    <i class="fas fa-sync"></i> 고급 방식으로 돌아가기
+                </button>
+            </div>
+        `;
+        
+        const form = document.getElementById('apartment-form');
+        // 기존 이벤트 리스너 제거 후 새 내용으로 교체
+        const newForm = document.createElement('form');
+        newForm.id = 'apartment-form';
+        newForm.className = 'needs-validation';
+        newForm.setAttribute('novalidate', '');
+        newForm.innerHTML = formHtml;
+        
+        form.parentNode.replaceChild(newForm, form);
+        
+        // 기존 방식 이벤트 리스너 등록
+        setupLegacyForm();
+        
+        alert('기존 방식으로 전환되었습니다.');
+    }
+}
+
+// 기존 방식 폼 이벤트 설정
+function setupLegacyForm() {
+    const legacyForm = document.getElementById('apartment-form');
+    if (legacyForm) {
+        legacyForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const originalText = showLoading('apt-btn');
+            
+            try {
+                const formData = new FormData(e.target);
+                const lawdCd = formData.get('lawd_cd');
+                const dealYmd = formData.get('deal_ymd');
+                
+                if (!lawdCd || !dealYmd) {
+                    alert('모든 필드를 입력해주세요.');
+                    return;
+                }
+                
+                const data = {
+                    tool_name: 'get_real_estate_data',
+                    parameters: {
+                        lawd_cd: lawdCd,
+                        deal_ymd: dealYmd,
+                        property_type: '아파트'
+                    }
+                };
+                
+                const result = await makeRequest('/web/api/mcp/test', data);
+                showResult('실거래가 조회 결과 (기존 방식)', result);
+            } finally {
+                hideLoading('apt-btn', originalText);
             }
         });
     }
-});
+}
 </script>
 {% endblock %}

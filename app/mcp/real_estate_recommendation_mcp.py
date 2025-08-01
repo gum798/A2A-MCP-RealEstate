@@ -516,21 +516,430 @@ async def _get_real_estate_data(lawd_cd: str, deal_ymd: str, property_type: str 
         }
 
 @mcp.tool()
-async def get_real_estate_data(lawd_cd: str, deal_ymd: str, property_type: str = "아파트", emd_name: str = "", date_range: str = "", use_xml_api: bool = False) -> Dict[str, Any]:
+async def search_by_road_address(road_address: str, date_from: str = "", date_to: str = "", property_type: str = "아파트", deal_type: str = "매매") -> Dict[str, Any]:
     """
-    부동산 실거래가 데이터 조회 (CSV 다운로드 방식)
+    도로명 주소로 부동산 실거래가 검색
     
     Args:
-        lawd_cd: 지역코드 (5자리, 예: 11680 - 서울 강남구)
-        deal_ymd: 계약년월 (YYYYMM, 예: 202401) 또는 날짜 범위가 있으면 시작년월
-        property_type: 부동산 유형 (아파트, 오피스텔, 연립다세대)
-        emd_name: 읍면동명 (예: "개포동") - 선택사항
-        date_range: 날짜 범위 (예: "2025.06.01~2025.07.30") - 선택사항
+        road_address: 도로명 주소 (예: "인천 서구 검암로10번길 36")
+        date_from: 시작일 (YYYY-MM-DD)
+        date_to: 종료일 (YYYY-MM-DD)
+        property_type: 부동산 유형
+        deal_type: 거래 유형
     
     Returns:
         실거래가 데이터
     """
-    return await _get_real_estate_data(lawd_cd, deal_ymd, property_type, emd_name, date_range, use_xml_api)
+    try:
+        print(f"[INFO] 도로명 주소 검색: {road_address}", file=sys.stderr)
+        
+        # 도로명 주소에서 지역 정보 추출
+        region_info = await _extract_region_from_address(road_address)
+        
+        if not region_info.get("success"):
+            return {
+                "success": False,
+                "error": "지역 정보 추출 실패",
+                "message": f"주소 '{road_address}'에서 지역 정보를 찾을 수 없습니다."
+            }
+        
+        # 추출된 지역 정보로 실거래가 조회
+        sido_cd = region_info["sido_code"]
+        sgg_cd = region_info["sigungu_code"]
+        emd_name = region_info.get("emd_name", "")
+        
+        print(f"[INFO] 추출된 지역정보 - 시도: {sido_cd}, 시군구: {sgg_cd}, 읍면동: {emd_name}", file=sys.stderr)
+        
+        # 고급 검색 함수 호출
+        result = await _get_real_estate_csv_direct(
+            sido_cd=sido_cd,
+            sgg_cd=sgg_cd,
+            emd_cd="",  # 읍면동 코드는 빈값
+            area_range="",
+            price_range_min=10,
+            price_range_max=1000000,
+            date_from=date_from,
+            date_to=date_to,
+            deal_type=deal_type
+        )
+        
+        # 도로명으로 추가 필터링
+        if result.get("success") and result.get("data", {}).get("response", {}).get("body", {}).get("items"):
+            items = result["data"]["response"]["body"]["items"]
+            filtered_items = []
+            
+            # 도로명이 포함된 항목만 필터링
+            road_name_parts = road_address.split()
+            for item in items:
+                road_name = item.get("도로명", "").strip()
+                if road_name and any(part in road_name for part in road_name_parts[-2:]):  # 마지막 2개 부분 확인
+                    filtered_items.append(item)
+            
+            result["data"]["response"]["body"]["items"] = filtered_items[:10]
+            result["data"]["response"]["body"]["totalCount"] = len(filtered_items)
+            result["search_info"] = {
+                "road_address": road_address,
+                "extracted_region": region_info,
+                "original_count": len(items),
+                "filtered_count": len(filtered_items)
+            }
+        
+        return result
+        
+    except Exception as e:
+        print(f"[ERROR] 도로명 주소 검색 오류: {str(e)}", file=sys.stderr)
+        return {
+            "success": False,
+            "error": str(e),
+            "message": f"도로명 주소 검색 중 오류: {str(e)}"
+        }
+
+async def _extract_region_from_address(address: str) -> Dict[str, Any]:
+    """
+    도로명 주소에서 지역 정보 추출 (통합 region_codes 모듈 사용)
+    """
+    try:
+        # region_codes 모듈에서 함수 임포트
+        import sys
+        import os
+        
+        # 상위 디렉토리 경로 추가
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        parent_dir = os.path.dirname(current_dir)
+        sys.path.insert(0, parent_dir)
+        
+        from data.region_codes import find_region_code_by_address, parse_road_address, SIDO_CODES, ALL_SIGUNGU
+        
+        # 주소 파싱
+        parsed = parse_road_address(address)
+        
+        # 지역 코드 찾기
+        sido_code, sigungu_code = find_region_code_by_address(address)
+        
+        if not sido_code or not sigungu_code:
+            return {
+                "success": False, 
+                "error": f"주소 '{address}'에서 지역 코드를 찾을 수 없습니다",
+                "parsed": parsed
+            }
+        
+        # 읍면동명 추출 (도로명에서 유추)
+        emd_name = ""
+        if parsed.get('road_name'):
+            road_name = parsed['road_name']
+            # 도로명에서 동명 유추 (예: "검암로" -> "검암동")
+            if "로" in road_name:
+                base_name = road_name.split("로")[0]
+                emd_name = base_name + "동"
+            elif "길" in road_name:
+                base_name = road_name.split("길")[0]
+                if "번" in base_name:
+                    base_name = base_name.split("번")[0]
+                emd_name = base_name + "동"
+        
+        # 시도명과 시군구명 가져오기
+        sido_name = SIDO_CODES.get(sido_code, "")
+        sigungu_name = ""
+        if sido_code in ALL_SIGUNGU:
+            sigungu_name = ALL_SIGUNGU[sido_code].get(sigungu_code, "")
+        
+        return {
+            "success": True,
+            "sido_code": sido_code,
+            "sigungu_code": sigungu_code,
+            "emd_name": emd_name,
+            "parsed_address": {
+                "sido": parsed.get('sido', ''),
+                "sigungu": parsed.get('sigungu', ''),
+                "road": parsed.get('road_name', ''),
+                "number": parsed.get('building_number', ''),
+                "detail": parsed.get('detail', '')
+            },
+            "region_names": {
+                "sido": sido_name,
+                "sigungu": sigungu_name
+            }
+        }
+        
+    except Exception as e:
+        print(f"[ERROR] 주소 파싱 오류: {str(e)}", file=sys.stderr)
+        return {"success": False, "error": f"주소 파싱 오류: {str(e)}"}
+
+@mcp.tool()
+async def get_real_estate_data_advanced(
+    sido_cd: str,
+    sgg_cd: str, 
+    emd_cd: str = "",
+    emd_name: str = "",
+    complex_name: str = "",
+    area_range: str = "",
+    price_range_min: int = 10,
+    price_range_max: int = 1000000,
+    date_from: str = "",
+    date_to: str = "",
+    property_type: str = "아파트",
+    deal_type: str = "매매",
+    use_xml_api: bool = False
+) -> Dict[str, Any]:
+    """
+    고급 부동산 실거래가 데이터 조회 (실제 사이트 파라미터 사용)
+    
+    Args:
+        sido_cd: 시도코드 (예: 11)
+        sgg_cd: 시군구코드 (예: 11680)
+        emd_cd: 읍면동코드 (선택사항)
+        emd_name: 읍면동명 (선택사항)
+        complex_name: 단지명 (선택사항)
+        area_range: 면적범위 (60-85, 85-100, 100-130, 130-165, 165-)
+        price_range_min: 최소가격 (만원)
+        price_range_max: 최대가격 (만원)
+        date_from: 시작일 (YYYY-MM-DD)
+        date_to: 종료일 (YYYY-MM-DD)
+        property_type: 부동산유형
+        deal_type: 거래유형 (매매, 전세, 월세)
+        use_xml_api: XML API 사용 여부
+    
+    Returns:
+        실거래가 데이터
+    """
+    try:
+        # 실제 사이트 방식으로 CSV 직접 다운로드 시도
+        result = await _get_real_estate_csv_direct(
+            sido_cd=sido_cd,
+            sgg_cd=sgg_cd,
+            emd_cd=emd_cd,
+            area_range=area_range,
+            price_range_min=price_range_min,
+            price_range_max=price_range_max,
+            date_from=date_from,
+            date_to=date_to,
+            deal_type=deal_type
+        )
+        
+        if result["success"]:
+            # 추가 필터링 적용
+            if result.get("data", {}).get("response", {}).get("body", {}).get("items"):
+                items = result["data"]["response"]["body"]["items"]
+                filtered_items = []
+                
+                for item in items:
+                    # 읍면동명 필터링
+                    if emd_name and emd_name.strip():
+                        dong_name = item.get("법정동", "").strip()
+                        if emd_name not in dong_name:
+                            continue
+                    
+                    # 단지명 필터링
+                    if complex_name and complex_name.strip():
+                        apt_name = item.get("아파트명", "").strip()
+                        if complex_name.lower() not in apt_name.lower():
+                            continue
+                    
+                    filtered_items.append(item)
+                
+                # 필터링된 결과 업데이트
+                result["data"]["response"]["body"]["items"] = filtered_items[:20]
+                result["data"]["response"]["body"]["totalCount"] = len(filtered_items)
+                
+                # 필터링 정보 추가
+                result["filter_applied"] = {
+                    "emd_name": emd_name,
+                    "complex_name": complex_name,
+                    "area_range": area_range,
+                    "price_range": f"{price_range_min}-{price_range_max}만원",
+                    "date_range": f"{date_from} ~ {date_to}",
+                    "original_count": len(items),
+                    "filtered_count": len(filtered_items)
+                }
+            
+            return result
+        
+        # CSV 직접 다운로드 실패 시 기존 XML API 사용
+        lawd_cd = sgg_cd  # 시군구 코드를 lawd_cd로 사용
+        deal_ymd = date_from.replace("-", "")[:6] if date_from else datetime.now().strftime("%Y%m")
+        
+        return await _get_real_estate_data(lawd_cd, deal_ymd, property_type, emd_name, "", use_xml_api)
+        
+    except Exception as e:
+        print(f"[ERROR] 고급 실거래가 조회 오류: {str(e)}", file=sys.stderr)
+        return {
+            "success": False,
+            "error": str(e),
+            "message": f"고급 실거래가 조회 중 오류가 발생했습니다: {str(e)}"
+        }
+
+async def _get_real_estate_data_legacy(lawd_cd: str, deal_ymd: str, property_type: str = "아파트", emd_name: str = "", complex_name: str = "", area_range: str = "", date_range: str = "", use_xml_api: bool = False) -> Dict[str, Any]:
+    # 필터링 정보를 포함하여 호출
+    result = await _get_real_estate_data(lawd_cd, deal_ymd, property_type, emd_name, date_range, use_xml_api)
+    
+    # 결과 필터링 적용
+    if result.get("success") and result.get("data", {}).get("response", {}).get("body", {}).get("items"):
+        items = result["data"]["response"]["body"]["items"]
+        filtered_items = []
+        
+        for item in items:
+            # 단지명 필터링
+            if complex_name and complex_name.strip():
+                apt_name = item.get("아파트명", "").strip()
+                if complex_name.lower() not in apt_name.lower():
+                    continue
+            
+            # 면적 범위 필터링
+            if area_range and area_range.strip():
+                try:
+                    area_str = item.get("전용면적", "").replace("㎡", "").strip()
+                    if area_str:
+                        area = float(area_str)
+                        
+                        # 면적 범위 파싱 (예: "60-85", "165-")
+                        if "-" in area_range:
+                            if area_range.endswith("-"):  # "165-" 형태
+                                min_area = float(area_range[:-1])
+                                if area < min_area:
+                                    continue
+                            else:  # "60-85" 형태
+                                min_area, max_area = map(float, area_range.split("-"))
+                                if not (min_area <= area <= max_area):
+                                    continue
+                except (ValueError, AttributeError):
+                    # 면적 파싱 실패 시 해당 항목 포함
+                    pass
+            
+            filtered_items.append(item)
+        
+        # 필터링된 결과 업데이트
+        result["data"]["response"]["body"]["items"] = filtered_items[:20]  # 최대 20개로 제한
+        result["data"]["response"]["body"]["totalCount"] = len(filtered_items)
+        
+        # 필터링 정보 추가
+        result["filter_info"] = {
+            "complex_name": complex_name,
+            "area_range": area_range,
+            "original_count": len(items),
+            "filtered_count": len(filtered_items)
+        }
+    
+    return result
+
+async def _get_real_estate_csv_direct(
+    sido_cd: str,
+    sgg_cd: str,
+    emd_cd: str = "",
+    area_range: str = "",
+    price_range_min: int = 10,
+    price_range_max: int = 1000000,
+    date_from: str = "",
+    date_to: str = "",
+    deal_type: str = "매매"
+) -> Dict[str, Any]:
+    """
+    국토교통부 실거래가 CSV 직접 다운로드
+    실제 사이트와 동일한 파라미터 사용
+    """
+    try:
+        # 날짜 설정 (기본값: 최근 1개월)
+        if not date_from or not date_to:
+            from datetime import datetime, timedelta
+            end_date = datetime.now()
+            start_date = end_date - timedelta(days=30)
+            date_from = start_date.strftime("%Y-%m-%d")
+            date_to = end_date.strftime("%Y-%m-%d")
+        
+        # 면적 코드 매핑
+        area_code_map = {
+            "60-85": "3",      # 60㎡초과~85㎡이하
+            "85-100": "4",     # 85㎡초과~100㎡이하  
+            "100-130": "5",    # 100㎡초과~130㎡이하
+            "130-165": "6",    # 130㎡초과~165㎡이하
+            "165-": "7"        # 165㎡초과
+        }
+        
+        # 거래유형 코드 매핑
+        deal_type_map = {
+            "매매": "1",
+            "전세": "2", 
+            "월세": "3"
+        }
+        
+        # 요청 파라미터 (실제 사이트와 완전 동일)
+        params = {
+            "srhThingNo": "A",                    # 아파트
+            "srhDelngSecd": deal_type_map.get(deal_type, "1"),  # 거래유형
+            "srhAddrGbn": "1",                    # 주소구분
+            "srhLfstsSecd": "1",                  # 실거래가구분
+            "sidoNm": "",                         # 시도명 (빈값)
+            "sggNm": "",                          # 시군구명 (빈값)
+            "emdNm": "",                          # 읍면동명 (빈값)
+            "loadNm": "전체",                     # 도로명
+            "areaNm": "전체",                     # 면적범위명
+            "hsmpNm": "전체",                     # 단지명
+            "mobileAt": "",                       # 모바일구분
+            "srhFromDt": date_from,               # 시작일
+            "srhToDt": date_to,                   # 종료일
+            "srhNewRonSecd": "",                  # 신구분
+            "srhSidoCd": f"{sido_cd}000",         # 시도코드
+            "srhSggCd": sgg_cd,                   # 시군구코드
+            "srhEmdCd": emd_cd if emd_cd else "", # 읍면동코드
+            "srhRoadNm": "",                      # 도로명
+            "srhLoadCd": "",                      # 도로코드
+            "srhHsmpCd": "",                      # 단지코드
+            "srhArea": area_code_map.get(area_range, ""), # 면적코드
+            "srhFromAmount": str(price_range_min), # 최소가격
+            "srhToAmount": str(price_range_max),   # 최대가격
+        }
+        
+        # CSV 다운로드 URL
+        csv_url = "https://rt.molit.go.kr/pt/xls/ptXlsDown.do"
+        
+        async with httpx.AsyncClient(
+            timeout=httpx.Timeout(120.0, connect=30.0),
+            verify=False,
+            follow_redirects=True,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+                "Referer": "https://rt.molit.go.kr/pt/xls/xls.do?mobileAt=",
+                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+            }
+        ) as client:
+            # POST 요청으로 CSV 다운로드
+            response = await client.post(csv_url, data=params)
+            
+            if response.status_code != 200:
+                return {
+                    "success": False,
+                    "error": f"HTTP {response.status_code}",
+                    "message": f"CSV 다운로드 실패: {response.status_code}"
+                }
+            
+            # CSV 데이터 파싱
+            csv_content = response.text
+            
+            # 기존 CSV 파싱 함수 사용
+            items = parse_csv_data(csv_content, "", date_from, date_to, "아파트")
+            
+            return {
+                "success": True,
+                "data": {
+                    "response": {
+                        "header": {"resultCode": "00", "resultMsg": "정상"},
+                        "body": {
+                            "items": items[:20],  # 최대 20개
+                            "totalCount": len(items)
+                        }
+                    }
+                },
+                "source": "csv_direct",
+                "request_params": params,
+                "total_items": len(items)
+            }
+            
+    except Exception as e:
+        print(f"[ERROR] CSV 직접 다운로드 오류: {str(e)}", file=sys.stderr)
+        return {
+            "success": False,
+            "error": str(e),
+            "message": f"CSV 직접 다운로드 중 오류가 발생했습니다: {str(e)}"
+        }
 
 
 # 내부 함수 - 다른 도구에서 직접 호출 가능

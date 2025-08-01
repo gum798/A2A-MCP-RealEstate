@@ -22,6 +22,7 @@ from ..utils.fastmcp_client import (
     get_location_resources,
     read_location_resource
 )
+from ..data.region_codes import get_sido_list, get_sigungu_list, get_emd_list, get_complex_list
 
 router = APIRouter(prefix="/web", tags=["web"])
 templates = Jinja2Templates(directory="app/templates")
@@ -34,14 +35,19 @@ class MCPTestRequest(BaseModel):
 class AgentTestRequest(BaseModel):
     """Agent 테스트 요청 모델"""
     address: str
+    sido_code: Optional[str] = ""
+    sigungu_code: Optional[str] = ""
+    eupmyeondong: Optional[str] = ""
+    complex_name: Optional[str] = ""
     price: int
     area: float
+    area_range: Optional[str] = ""
     floor: int
     total_floor: int
     building_year: int
     property_type: str
     deal_type: str
-    user_preference: str
+    user_preference: str = "균형"
 
 # 메인 페이지
 @router.get("/", response_class=HTMLResponse)
@@ -82,7 +88,7 @@ async def test_mcp_tool(request: MCPTestRequest):
     """MCP 도구 테스트"""
     try:
         # 실제 MCP 서버 호출
-        if request.tool_name in ["get_real_estate_data", "analyze_location", "evaluate_investment_value", "evaluate_life_quality", "recommend_property", "get_regional_price_statistics", "compare_similar_properties"]:
+        if request.tool_name in ["get_real_estate_data", "analyze_location", "evaluate_investment_value", "evaluate_life_quality", "recommend_property", "get_regional_price_statistics", "compare_similar_properties", "search_by_road_address"]:
             # 부동산 MCP 서버 호출 (진정한 MCP 프로토콜)
             result = await call_real_estate_mcp_tool(request.tool_name, request.parameters)
         elif request.tool_name in ["find_nearest_subway_stations", "address_to_coordinates", "find_nearby_facilities", "calculate_location_score", "get_realtime_traffic_info", "get_subway_realtime_arrival"]:
@@ -358,4 +364,77 @@ async def read_mcp_resource(uri: str):
             "success": False,
             "error": str(e),
             "message": f"MCP 리소스 '{uri}' 읽기 실패"
+        }
+
+# 지역코드 관련 API
+@router.get("/api/regions/sido")
+async def get_sido():
+    """시도 목록 조회"""
+    try:
+        sido_list = get_sido_list()
+        return {
+            "success": True,
+            "data": sido_list,
+            "message": f"{len(sido_list)}개의 시도를 조회했습니다"
+        }
+    except Exception as e:
+        logger.error(f"시도 목록 조회 오류: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "message": "시도 목록 조회 실패"
+        }
+
+@router.get("/api/regions/sigungu/{sido_code}")
+async def get_sigungu(sido_code: str):
+    """시군구 목록 조회"""
+    try:
+        sigungu_list = get_sigungu_list(sido_code)
+        return {
+            "success": True,
+            "data": sigungu_list,
+            "message": f"{len(sigungu_list)}개의 시군구를 조회했습니다"
+        }
+    except Exception as e:
+        logger.error(f"시군구 목록 조회 오류: {e}")
+        return {
+            "success": False, 
+            "error": str(e),
+            "message": "시군구 목록 조회 실패"
+        }
+
+@router.get("/api/regions/emd/{sigungu_code}")
+async def get_emd(sigungu_code: str):
+    """읍면동 목록 조회"""
+    try:
+        emd_list = get_emd_list(sigungu_code)
+        return {
+            "success": True,
+            "data": emd_list,
+            "message": f"{len(emd_list)}개의 읍면동을 조회했습니다"
+        }
+    except Exception as e:
+        logger.error(f"읍면동 목록 조회 오류: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "message": "읍면동 목록 조회 실패"
+        }
+
+@router.get("/api/regions/complex/{sigungu_code}")
+async def get_complex(sigungu_code: str, emd_name: str = ""):
+    """아파트 단지명 목록 조회"""
+    try:
+        complex_list = get_complex_list(sigungu_code, emd_name)
+        return {
+            "success": True,
+            "data": complex_list,
+            "message": f"{len(complex_list)}개의 단지를 조회했습니다"
+        }
+    except Exception as e:
+        logger.error(f"단지 목록 조회 오류: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "message": "단지 목록 조회 실패"
         }
