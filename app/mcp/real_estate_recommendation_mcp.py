@@ -167,7 +167,7 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
 
 
 # 내부 함수 - 다른 도구에서 직접 호출 가능
-async def _get_real_estate_data(lawd_cd: str, deal_ymd: str, property_type: str = "아파트", emd_name: str = "", date_range: str = "", use_xml_api: bool = True) -> Dict[str, Any]:
+async def _get_real_estate_data(lawd_cd: str, deal_ymd: str, property_type: str = "아파트", emd_name: str = "", date_range: str = "", use_xml_api: bool = False) -> Dict[str, Any]:
     """
     부동산 실거래가 데이터 조회 (CSV 다운로드 방식)
     
@@ -224,7 +224,11 @@ async def _get_real_estate_data(lawd_cd: str, deal_ymd: str, property_type: str 
                 "pageNo": 1
             }
             
-            async with httpx.AsyncClient(timeout=30.0) as client:
+            async with httpx.AsyncClient(
+                timeout=httpx.Timeout(60.0, connect=30.0),
+                verify=False,
+                follow_redirects=True
+            ) as client:
                 response = await client.get(url, params=params)
                 response.raise_for_status()
                 
@@ -393,7 +397,11 @@ async def _get_real_estate_data(lawd_cd: str, deal_ymd: str, property_type: str 
             'Upgrade-Insecure-Requests': '1'
         }
         
-        async with httpx.AsyncClient(timeout=60.0, verify=False) as client:
+        async with httpx.AsyncClient(
+            timeout=httpx.Timeout(60.0, connect=30.0),
+            verify=False,
+            follow_redirects=True
+        ) as client:
             # 1단계: 메인 페이지 방문하여 세션 설정
             session_response = await client.get(session_url, headers=headers)
             if os.getenv("ENVIRONMENT", "production") == "development":
@@ -498,14 +506,17 @@ async def _get_real_estate_data(lawd_cd: str, deal_ymd: str, property_type: str 
             }
             
     except Exception as e:
+        import sys
+        print(f"[ERROR] {property_type} 실거래가 조회 오류: {str(e)}", file=sys.stderr)
+        print(f"[ERROR] 오류 타입: {type(e).__name__}", file=sys.stderr)
         return {
             "success": False,
             "error": str(e),
-            "message": f"{property_type} 실거래가 조회 중 오류가 발생했습니다"
+            "message": f"{property_type} 실거래가 조회 중 오류가 발생했습니다: {str(e)}"
         }
 
 @mcp.tool()
-async def get_real_estate_data(lawd_cd: str, deal_ymd: str, property_type: str = "아파트", emd_name: str = "", date_range: str = "", use_xml_api: bool = True) -> Dict[str, Any]:
+async def get_real_estate_data(lawd_cd: str, deal_ymd: str, property_type: str = "아파트", emd_name: str = "", date_range: str = "", use_xml_api: bool = False) -> Dict[str, Any]:
     """
     부동산 실거래가 데이터 조회 (CSV 다운로드 방식)
     

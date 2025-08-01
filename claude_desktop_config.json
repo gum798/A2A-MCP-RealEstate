@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "real-estate-korea": {
+      "command": "/Users/jhseo/Desktop/0020.project/A2A_Agent/.venv/bin/python",
+      "args": [
+        "/Users/jhseo/Desktop/0020.project/A2A_Agent/mcp_real_estate_server.py"
+      ],
+      "env": {
+        "MOLIT_API_KEY": "YOUR_MOLIT_API_KEY_HERE",
+        "NAVER_CLIENT_ID": "YOUR_NAVER_CLIENT_ID_HERE", 
+        "NAVER_CLIENT_SECRET": "YOUR_NAVER_CLIENT_SECRET_HERE"
+      }
+    }
+  }
+}
