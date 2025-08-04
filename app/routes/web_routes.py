@@ -88,7 +88,7 @@ async def test_mcp_tool(request: MCPTestRequest):
     """MCP 도구 테스트"""
     try:
         # 실제 MCP 서버 호출
-        if request.tool_name in ["get_real_estate_data", "analyze_location", "evaluate_investment_value", "evaluate_life_quality", "recommend_property", "get_regional_price_statistics", "compare_similar_properties", "search_by_road_address"]:
+        if request.tool_name in ["get_real_estate_data", "get_real_estate_data_advanced", "analyze_location", "evaluate_investment_value", "evaluate_life_quality", "recommend_property", "get_regional_price_statistics", "compare_similar_properties", "search_by_road_address"]:
             # 부동산 MCP 서버 호출 (진정한 MCP 프로토콜)
             result = await call_real_estate_mcp_tool(request.tool_name, request.parameters)
         elif request.tool_name in ["find_nearest_subway_stations", "address_to_coordinates", "find_nearby_facilities", "calculate_location_score", "get_realtime_traffic_info", "get_subway_realtime_arrival"]:

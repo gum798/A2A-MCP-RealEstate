@@ -389,10 +389,12 @@ async function searchApartmentTrade() {
     
     try {
         const data = {
-            tool_name: 'get_real_estate_data',
+            tool_name: 'get_real_estate_data_advanced',
             parameters: {
-                lawd_cd: lawdCd,
-                deal_ymd: dealYmd,
+                sido_cd: lawdCd.substring(0, 2), // 처음 2자리가 시도 코드
+                sgg_cd: lawdCd, // 전체가 시군구 코드
+                date_from: dealYmd,
+                date_to: dealYmd,
                 property_type: '아파트'
             }
         };
@@ -853,10 +855,12 @@ function setupLegacyForm() {
                 }
                 
                 const data = {
-                    tool_name: 'get_real_estate_data',
+                    tool_name: 'get_real_estate_data_advanced',
                     parameters: {
-                        lawd_cd: lawdCd,
-                        deal_ymd: dealYmd,
+                        sido_cd: lawdCd.substring(0, 2), // 처음 2자리가 시도 코드
+                        sgg_cd: lawdCd, // 전체가 시군구 코드
+                        date_from: dealYmd,
+                        date_to: dealYmd,
                         property_type: '아파트'
                     }
                 };

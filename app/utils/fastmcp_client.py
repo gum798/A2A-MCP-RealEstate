@@ -42,6 +42,7 @@ class FastMCPClient:
             from ..mcp import real_estate_recommendation_mcp
             return {
                 "get_real_estate_data": real_estate_recommendation_mcp.get_real_estate_data_advanced,
+                "get_real_estate_data_advanced": real_estate_recommendation_mcp.get_real_estate_data_advanced,
                 "analyze_location": real_estate_recommendation_mcp.analyze_location,
                 "evaluate_investment_value": real_estate_recommendation_mcp.evaluate_investment_value,
                 "evaluate_life_quality": real_estate_recommendation_mcp.evaluate_life_quality,
