@@ -551,17 +551,15 @@ async def search_by_road_address(road_address: str, date_from: str = "", date_to
         
         print(f"[INFO] 추출된 지역정보 - 시도: {sido_cd}, 시군구: {sgg_cd}, 읍면동: {emd_name}", file=sys.stderr)
         
-        # 고급 검색 함수 호출
-        result = await _get_real_estate_csv_direct(
-            sido_cd=sido_cd,
-            sgg_cd=sgg_cd,
-            emd_cd="",  # 읍면동 코드는 빈값
-            area_range="",
-            price_range_min=10,
-            price_range_max=1000000,
-            date_from=date_from,
-            date_to=date_to,
-            deal_type=deal_type
+        # 내부 함수를 직접 호출하여 안정성 확보
+        deal_ymd = date_from if date_from else "202501"
+        result = await _get_real_estate_data(
+            lawd_cd=sgg_cd,
+            deal_ymd=deal_ymd,
+            property_type=property_type,
+            emd_name=emd_name,
+            date_range="",
+            use_xml_api=False
         )
         
         # 도로명으로 추가 필터링
@@ -838,13 +836,32 @@ async def _get_real_estate_csv_direct(
     실제 사이트와 동일한 파라미터 사용
     """
     try:
-        # 날짜 설정 (기본값: 최근 1개월)
+        # 날짜 설정 및 변환
         if not date_from or not date_to:
             from datetime import datetime, timedelta
             end_date = datetime.now()
             start_date = end_date - timedelta(days=30)
             date_from = start_date.strftime("%Y-%m-%d")
             date_to = end_date.strftime("%Y-%m-%d")
+        else:
+            # YYYYMM 형식인 경우 YYYY-MM-DD 형식으로 변환
+            if len(date_from) == 6 and date_from.isdigit():
+                year = date_from[:4]
+                month = date_from[4:6]
+                date_from = f"{year}-{month}-01"
+                
+                # 월의 마지막 날 계산
+                import calendar
+                last_day = calendar.monthrange(int(year), int(month))[1]
+                date_to = f"{year}-{month}-{last_day:02d}"
+            elif len(date_to) == 6 and date_to.isdigit():
+                year = date_to[:4]
+                month = date_to[4:6]
+                
+                # 월의 마지막 날 계산
+                import calendar
+                last_day = calendar.monthrange(int(year), int(month))[1]
+                date_to = f"{year}-{month}-{last_day:02d}"
         
         # 면적 코드 매핑
         area_code_map = {
