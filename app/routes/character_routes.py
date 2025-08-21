@@ -9,6 +9,7 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 
 from app.agent.character_agents import character_manager
+from app.agent.llm_character_agents import llm_character_manager
 from app.utils.logger import logger
 
 router = APIRouter()
@@ -25,7 +26,8 @@ class ChatRequest(BaseModel):
 async def analyze_property_with_characters(request: PropertyAnalysisRequest):
     """투심이와 삼돌이가 함께 부동산 분석"""
     try:
-        analysis = character_manager.analyze_property_with_characters(
+        # LLM 기반 분석 사용
+        analysis = await llm_character_manager.analyze_property_with_llm(
             request.property_data, 
             request.user_message
         )
@@ -47,8 +49,8 @@ async def chat_with_characters(request: ChatRequest):
     """캐릭터들과 대화"""
     try:
         if request.property_data:
-            # 부동산 데이터가 있으면 분석과 함께 대화
-            analysis = character_manager.analyze_property_with_characters(
+            # 부동산 데이터가 있으면 LLM 기반 분석과 함께 대화
+            analysis = await llm_character_manager.analyze_property_with_llm(
                 request.property_data,
                 request.message
             )
@@ -64,12 +66,23 @@ async def chat_with_characters(request: ChatRequest):
                 "timestamp": datetime.now().isoformat()
             }
         else:
-            # 일반 대화
+            # 일반 대화 - LLM 기반으로 개선
+            sample_property = {
+                "address": "사용자가 제공한 주소가 없습니다",
+                "message": request.message
+            }
+            analysis = await llm_character_manager.analyze_property_with_llm(
+                sample_property, 
+                request.message
+            )
+            
             return {
                 "status": "success",
                 "type": "general_chat",
-                "투심이": "부동산 데이터를 보여주면 투자 관점에서 분석해줄게!",
-                "삼돌이": "맞아! 살기 좋은 곳인지도 같이 봐줄게~",
+                "투심이": analysis["투심이_분석"]["comment"],
+                "삼돌이": analysis["삼돌이_분석"]["comment"],
+                "투심이_질문": analysis["투심이_분석"]["questions"],
+                "삼돌이_질문": analysis["삼돌이_분석"]["questions"],
                 "timestamp": datetime.now().isoformat()
             }
     except Exception as e:
@@ -106,8 +119,8 @@ async def get_conversation_history():
     try:
         return {
             "status": "success",
-            "history": character_manager.conversation_history[-10:],  # 최근 10개
-            "total_conversations": len(character_manager.conversation_history),
+            "history": llm_character_manager.conversation_history[-10:],  # 최근 10개
+            "total_conversations": len(llm_character_manager.conversation_history),
             "timestamp": datetime.now().isoformat()
         }
     except Exception as e:
@@ -121,7 +134,7 @@ async def get_conversation_history():
 async def clear_conversation_history():
     """대화 기록 초기화"""
     try:
-        character_manager.conversation_history.clear()
+        llm_character_manager.conversation_history.clear()
         return {
             "status": "success",
             "message": "대화 기록이 초기화되었습니다.",
