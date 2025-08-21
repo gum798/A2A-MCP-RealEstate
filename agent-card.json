@@ -1,0 +1,94 @@
+{
+  "name": "A2A Real Estate Agent",
+  "description": "부동산 분석 및 추천 서비스를 제공하는 A2A Agent. 투자가치와 삶의질 평가를 통해 맞춤형 부동산 추천",
+  "version": "1.0.0",
+  "url": "http://localhost:8000",
+  "provider": {
+    "name": "A2A Agent System",
+    "contact": "agent-py-001@a2a.local"
+  },
+  "capabilities": {
+    "primary_functions": [
+      "real_estate_analysis",
+      "investment_value_evaluation", 
+      "quality_of_life_assessment",
+      "location_based_search",
+      "price_trend_analysis"
+    ],
+    "communication_protocols": [
+      "HTTP/HTTPS",
+      "JSON-RPC",
+      "SSE"
+    ],
+    "data_formats": [
+      "JSON",
+      "CSV"
+    ]
+  },
+  "endpoints": {
+    "discovery": "/api/agent/discovery",
+    "handshake": "/api/agent/handshake",
+    "message": "/api/agent/message",
+    "rpc": "/api/agent/rpc",
+    "stream": "/api/agent/stream"
+  },
+  "schema": {
+    "input": {
+      "type": "object",
+      "properties": {
+        "message_type": {
+          "type": "string",
+          "enum": ["ping", "data_request", "analysis_request", "rpc_call"]
+        },
+        "data": {
+          "type": "object",
+          "description": "Request specific data"
+        },
+        "agent_id": {
+          "type": "string",
+          "description": "Requesting agent identifier"
+        }
+      },
+      "required": ["message_type", "agent_id"]
+    },
+    "output": {
+      "type": "object", 
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["success", "error", "processing"]
+        },
+        "data": {
+          "type": "object",
+          "description": "Response data"
+        },
+        "agent_id": {
+          "type": "string",
+          "description": "Responding agent identifier"
+        }
+      }
+    }
+  },
+  "authentication": {
+    "methods": ["api_key", "jwt"],
+    "required": false
+  },
+  "features": {
+    "streaming": true,
+    "multimodal": true,
+    "async_processing": true,
+    "error_handling": true,
+    "clarification_requests": true
+  },
+  "discovery_methods": [
+    "dns_txt_record",
+    "well_known_endpoint",
+    "manual_configuration"
+  ],
+  "metadata": {
+    "created_at": "2025-08-21T00:00:00Z",
+    "updated_at": "2025-08-21T00:00:00Z",
+    "tags": ["real_estate", "analysis", "recommendation", "korean"],
+    "language_support": ["ko", "en"]
+  }
+}
