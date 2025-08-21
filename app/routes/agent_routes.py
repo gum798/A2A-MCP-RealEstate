@@ -183,9 +183,16 @@ async def get_message_queue():
 @router.get("/.well-known/agent-card")
 async def get_agent_card():
     """Agent Card 조회 (Well-known 엔드포인트)"""
+    from fastapi.responses import JSONResponse
+    import json
+    
     try:
         agent_card = await agent_discovery.load_agent_card()
-        return agent_card
+        # UTF-8 인코딩으로 JSON 응답 반환
+        return JSONResponse(
+            content=agent_card,
+            headers={"Content-Type": "application/json; charset=utf-8"}
+        )
     except Exception as e:
         logger.error(f"Failed to load agent card: {e}")
         raise HTTPException(

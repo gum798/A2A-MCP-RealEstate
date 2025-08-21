@@ -17,10 +17,12 @@ from app.utils.fastmcp_client import cleanup_mcp_clients
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler"""
-    logger.info(f"Starting A2A Agent Server")
+    logger.info("Starting A2A Agent Server")
     logger.info(f"Agent ID: {settings.agent_id}")
     logger.info(f"Agent Name: {settings.agent_name}")
     logger.info(f"Port: {settings.port}")
+    logger.info(f"Agent Card URL: http://localhost:{settings.port}/api/agent/.well-known/agent-card")
+    logger.info(f"Character Agents: http://localhost:{settings.port}/api/characters/characters")
     yield
     logger.info("Shutting down A2A Agent Server")
     # MCP 클라이언트들 정리
@@ -34,6 +36,19 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# JSON 응답 UTF-8 인코딩 설정
+import json
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
+
+# 기본 JSON 응답 인코딩 설정
+@app.middleware("http")
+async def ensure_utf8_json(request, call_next):
+    response = await call_next(request)
+    if response.headers.get("content-type", "").startswith("application/json"):
+        response.headers["content-type"] = "application/json; charset=utf-8"
+    return response
 
 # CORS 미들웨어 추가
 app.add_middleware(
