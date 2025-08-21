@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: a2a-agent
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python3 -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: PORT
+        value: 8080
+      - key: AGENT_ID
+        value: agent-py-001
+      - key: AGENT_NAME
+        value: A2A_Python_Agent
+      - key: LOG_LEVEL
+        value: INFO
