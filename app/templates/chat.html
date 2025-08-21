@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>투심이 & 삼돌이 - 부동산 상담</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+        }
+        
+        .chat-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1rem;
+            border-bottom: 1px solid #dee2e6;
+            backdrop-filter: blur(10px);
+        }
+        
+        .character-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .character-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .toosim {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E8E);
+        }
+        
+        .samdol {
+            background: linear-gradient(45deg, #4ECDC4, #44A08D);
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .message {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        
+        .message.user {
+            justify-content: flex-end;
+        }
+        
+        .message.user .message-content {
+            background: #007bff;
+            color: white;
+            margin-left: 2rem;
+        }
+        
+        .message.toosim .message-content {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E8E);
+            color: white;
+        }
+        
+        .message.samdol .message-content {
+            background: linear-gradient(45deg, #4ECDC4, #44A08D);
+            color: white;
+        }
+        
+        .message-content {
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            max-width: 70%;
+            word-wrap: break-word;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .message-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            color: white;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        .chat-input {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1rem;
+            border-top: 1px solid #dee2e6;
+            backdrop-filter: blur(10px);
+        }
+        
+        .property-form {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .form-control, .btn {
+            border-radius: 10px;
+        }
+        
+        .btn-send {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+        }
+        
+        .btn-send:hover {
+            background: linear-gradient(45deg, #764ba2, #667eea);
+            color: white;
+        }
+        
+        .questions {
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            font-style: italic;
+            opacity: 0.8;
+        }
+        
+        .typing-indicator {
+            display: none;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 1rem;
+            margin: 0.5rem 0;
+        }
+        
+        .typing-dots {
+            display: inline-flex;
+            gap: 0.2rem;
+        }
+        
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #666;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+        
+        .welcome-message {
+            text-align: center;
+            padding: 2rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .welcome-message h3 {
+            margin-bottom: 1rem;
+        }
+        
+        .welcome-message p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <!-- 헤더 -->
+        <div class="chat-header">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="character-info">
+                        <div class="character-avatar toosim">투</div>
+                        <div>
+                            <h6 class="mb-0">투심이</h6>
+                            <small class="text-muted">투자가치 평가 전문</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="character-info">
+                        <div class="character-avatar samdol">삼</div>
+                        <div>
+                            <h6 class="mb-0">삼돌이</h6>
+                            <small class="text-muted">삶의질가치 평가 전문</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 채팅 메시지 영역 -->
+        <div class="chat-messages" id="chatMessages">
+            <div class="welcome-message">
+                <h3>🏠 부동산 상담을 시작해보세요!</h3>
+                <p>투심이와 삼돌이가 함께 부동산을 분석해드립니다.<br>
+                아래에 부동산 정보를 입력하거나 자유롭게 질문해보세요!</p>
+            </div>
+        </div>
+        
+        <!-- 타이핑 인디케이터 -->
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <span class="ms-2">투심이와 삼돌이가 분석 중...</span>
+        </div>
+        
+        <!-- 입력 영역 -->
+        <div class="chat-input">
+            <!-- 부동산 정보 입력 폼 -->
+            <div class="property-form" id="propertyForm">
+                <h6 class="mb-3"><i class="fas fa-home"></i> 부동산 정보 (선택사항)</h6>
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" id="address" placeholder="주소 (예: 서울 강남구)">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" class="form-control" id="price" placeholder="가격(만원)">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" class="form-control" id="area" placeholder="면적(㎡)">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" class="form-control" id="floor" placeholder="층수">
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="togglePropertyForm()">
+                        <i class="fas fa-eye-slash"></i> 부동산 정보 숨기기
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="clearPropertyForm()">
+                        <i class="fas fa-eraser"></i> 초기화
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 메시지 입력 -->
+            <div class="row g-2">
+                <div class="col">
+                    <input type="text" class="form-control" id="messageInput" 
+                           placeholder="투심이와 삼돌이에게 메시지를 보내세요..." 
+                           onkeypress="handleKeyPress(event)">
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-send" onclick="sendMessage()">
+                        <i class="fas fa-paper-plane"></i> 전송
+                    </button>
+                </div>
+            </div>
+            
+            <div class="mt-2">
+                <button type="button" class="btn btn-sm btn-outline-info" onclick="togglePropertyForm()" id="toggleBtn">
+                    <i class="fas fa-eye"></i> 부동산 정보 입력
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let propertyFormVisible = true;
+        
+        function togglePropertyForm() {
+            const form = document.getElementById('propertyForm');
+            const toggleBtn = document.getElementById('toggleBtn');
+            
+            if (propertyFormVisible) {
+                form.style.display = 'none';
+                toggleBtn.innerHTML = '<i class="fas fa-eye"></i> 부동산 정보 입력';
+                propertyFormVisible = false;
+            } else {
+                form.style.display = 'block';
+                toggleBtn.innerHTML = '<i class="fas fa-eye-slash"></i> 부동산 정보 숨기기';
+                propertyFormVisible = true;
+            }
+        }
+        
+        function clearPropertyForm() {
+            document.getElementById('address').value = '';
+            document.getElementById('price').value = '';
+            document.getElementById('area').value = '';
+            document.getElementById('floor').value = '';
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        function addMessage(type, content, avatar = '', questions = []) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            let avatarHtml = '';
+            if (avatar) {
+                avatarHtml = `<div class="message-avatar ${type}">${avatar}</div>`;
+            }
+            
+            let questionsHtml = '';
+            if (questions && questions.length > 0) {
+                questionsHtml = `<div class="questions">💭 ${questions.join(' / ')}</div>`;
+            }
+            
+            messageDiv.innerHTML = `
+                ${avatarHtml}
+                <div class="message-content">
+                    ${content}
+                    ${questionsHtml}
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function showTyping() {
+            document.getElementById('typingIndicator').style.display = 'block';
+            const messagesContainer = document.getElementById('chatMessages');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function hideTyping() {
+            document.getElementById('typingIndicator').style.display = 'none';
+        }
+        
+        async function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            
+            if (!message) return;
+            
+            // 사용자 메시지 추가
+            addMessage('user', message);
+            messageInput.value = '';
+            
+            // 부동산 데이터 수집
+            const propertyData = {};
+            const address = document.getElementById('address').value.trim();
+            const price = document.getElementById('price').value.trim();
+            const area = document.getElementById('area').value.trim();
+            const floor = document.getElementById('floor').value.trim();
+            
+            if (address) propertyData.address = address;
+            if (price) propertyData.price = parseInt(price);
+            if (area) propertyData.area = parseFloat(area);
+            if (floor) propertyData.floor = parseInt(floor);
+            
+            // API 요청 준비
+            const requestData = { message: message };
+            if (Object.keys(propertyData).length > 0) {
+                requestData.property_data = propertyData;
+            }
+            
+            // 타이핑 인디케이터 표시
+            showTyping();
+            
+            try {
+                const response = await fetch('/api/characters/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                
+                hideTyping();
+                
+                if (data.status === 'success') {
+                    // 투심이 응답
+                    if (data.투심이) {
+                        addMessage('toosim', data.투심이, '투', data.투심이_질문 || []);
+                    }
+                    
+                    // 삼돌이 응답
+                    if (data.삼돌이) {
+                        setTimeout(() => {
+                            addMessage('samdol', data.삼돌이, '삼', data.삼돌이_질문 || []);
+                        }, 500);
+                    }
+                    
+                    // 종합 의견 (있는 경우)
+                    if (data.종합의견) {
+                        setTimeout(() => {
+                            addMessage('', `<strong>📝 종합 의견:</strong><br>${data.종합의견}`);
+                        }, 1000);
+                    }
+                } else {
+                    addMessage('', '❌ 메시지 전송 중 오류가 발생했습니다.');
+                }
+            } catch (error) {
+                hideTyping();
+                addMessage('', '❌ 서버 연결 오류가 발생했습니다.');
+                console.error('Error:', error);
+            }
+        }
+        
+        // 페이지 로드 시 환영 메시지
+        window.onload = function() {
+            setTimeout(() => {
+                addMessage('toosim', '안녕하세요! 저는 투자가치 평가를 담당하는 투심이입니다. 부동산 투자에 관심 있으시면 언제든 물어보세요! 💰', '투');
+            }, 1000);
+            
+            setTimeout(() => {
+                addMessage('samdol', '반가워요~ 삶의질가치 평가를 담당하는 삼돌이예요! 실제로 살기 좋은 곳인지 궁금하시면 저에게 물어보세요! 🌱', '삼');
+            }, 2000);
+        };
+    </script>
+</body>
+</html>

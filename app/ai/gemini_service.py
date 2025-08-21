@@ -31,10 +31,10 @@ class GeminiService:
                 logger.info("Gemini CLI detected and available")
                 return True
             else:
-                logger.warning("Gemini CLI not available or not authenticated")
+                logger.debug("Gemini CLI not available or not authenticated")
                 return False
         except (subprocess.TimeoutExpired, FileNotFoundError) as e:
-            logger.warning(f"Gemini CLI not found: {e}")
+            logger.debug(f"Gemini CLI not found: {e}")
             return False
     
     async def chat(self, prompt: str, context: Optional[str] = None) -> str:
