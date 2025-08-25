@@ -1680,18 +1680,65 @@ async def recommend_property(
         }
 
 @mcp.tool()
-async def get_regional_price_statistics(lawd_cd: str, property_type: str = "아파트", months: int = 12) -> Dict[str, Any]:
+async def get_regional_price_statistics(lawd_cd: str = None, region: str = None, property_type: str = "아파트", months: int = 12) -> Dict[str, Any]:
     """
     지역별 가격 통계 및 트렌드 분석
     
     Args:
         lawd_cd: 지역코드 (5자리)
+        region: 지역명 또는 주소 (lawd_cd가 없을 때 사용)
         property_type: 부동산 유형 (아파트, 오피스텔, 연립다세대)
         months: 분석할 개월 수 (기본 12개월)
     
     Returns:
         지역별 가격 통계 데이터
     """
+    # region이 제공된 경우 lawd_cd로 변환 시도
+    if not lawd_cd and region:
+        # 간단한 지역명 매핑 (실제로는 더 정교한 주소 파싱이 필요)
+        region_mappings = {
+            "강남": "11680", "강남구": "11680",
+            "서초": "11650", "서초구": "11650", 
+            "송파": "11710", "송파구": "11710",
+            "강동": "11740", "강동구": "11740",
+            "마포": "11440", "마포구": "11440",
+            "용산": "11170", "용산구": "11170",
+            "성동": "11200", "성동구": "11200",
+            "광진": "11215", "광진구": "11215",
+            "동대문": "11230", "동대문구": "11230",
+            "중랑": "11260", "중랑구": "11260",
+            "성북": "11290", "성북구": "11290",
+            "강북": "11305", "강북구": "11305",
+            "도봉": "11320", "도봉구": "11320",
+            "노원": "11350", "노원구": "11350",
+            "은평": "11380", "은평구": "11380",
+            "서대문": "11410", "서대문구": "11410",
+            "영등포": "11560", "영등포구": "11560",
+            "양천": "11470", "양천구": "11470",
+            "구로": "11530", "구로구": "11530",
+            "금천": "11545", "금천구": "11545",
+            "관악": "11620", "관악구": "11620",
+            "동작": "11590", "동작구": "11590",
+            "중구": "11140", "종로": "11110", "종로구": "11110"
+        }
+        
+        # region에서 지역코드 찾기
+        for key, code in region_mappings.items():
+            if key in region:
+                lawd_cd = code
+                break
+        
+        # 여전히 lawd_cd가 없으면 기본값 사용 (강남구)
+        if not lawd_cd:
+            lawd_cd = "11680"
+    
+    if not lawd_cd:
+        return {
+            "success": False,
+            "error": "지역코드(lawd_cd) 또는 지역명(region)이 필요합니다",
+            "message": "lawd_cd 또는 region 파라미터를 제공해주세요"
+        }
+    
     if not MOLIT_API_KEY:
         return {
             "success": False,

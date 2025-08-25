@@ -38,7 +38,12 @@ class RealEstateAPI:
     def __init__(self, api_key: str):
         self.api_key = api_key
         self.base_url = MOLIT_BASE_URL
-        self.client = httpx.AsyncClient(timeout=30.0)
+        # DNS 문제 해결을 위해 더 상세한 설정
+        self.client = httpx.AsyncClient(
+            timeout=30.0,
+            follow_redirects=True,
+            verify=False  # SSL 인증서 검증 비활성화 (개발용)
+        )
     
     async def get_apartment_trade(self, lawd_cd: str, deal_ymd: str) -> dict:
         """아파트 매매 실거래가 조회"""
@@ -51,12 +56,25 @@ class RealEstateAPI:
             "pageNo": 1
         }
         
+        logger.info(f"MCP 아파트 매매 실거래가 조회 시작 - 지역코드: {lawd_cd}, 계약년월: {deal_ymd}")
+        logger.debug(f"API 호출 URL: {endpoint}")
+        logger.debug(f"API 요청 파라미터: {params}")
+        
         try:
             response = await self.client.get(endpoint, params=params)
+            logger.debug(f"API 응답 상태코드: {response.status_code}")
+            logger.debug(f"API 응답 헤더: {dict(response.headers)}")
+            logger.debug(f"API 응답 내용: {response.text[:1000]}...")
             response.raise_for_status()
-            return self._parse_xml_response(response.text)
+            
+            result = self._parse_xml_response(response.text)
+            logger.info(f"MCP 아파트 매매 실거래가 조회 완료 - 총 {result.get('total_count', 0)}건")
+            return result
         except Exception as e:
             logger.error(f"아파트 매매 실거래가 조회 오류: {e}")
+            logger.error(f"오류 타입: {type(e).__name__}")
+            logger.error(f"요청 URL: {endpoint}")
+            logger.error(f"요청 파라미터: {params}")
             return {"error": str(e)}
     
     async def get_apartment_rent(self, lawd_cd: str, deal_ymd: str) -> dict:
@@ -70,10 +88,18 @@ class RealEstateAPI:
             "pageNo": 1
         }
         
+        logger.info(f"MCP 아파트 전월세 실거래가 조회 시작 - 지역코드: {lawd_cd}, 계약년월: {deal_ymd}")
+        logger.debug(f"API 호출 URL: {endpoint}")
+        logger.debug(f"API 요청 파라미터: {params}")
+        
         try:
             response = await self.client.get(endpoint, params=params)
+            logger.debug(f"API 응답 상태코드: {response.status_code}")
             response.raise_for_status()
-            return self._parse_xml_response(response.text)
+            
+            result = self._parse_xml_response(response.text)
+            logger.info(f"MCP 아파트 전월세 실거래가 조회 완료 - 총 {result.get('total_count', 0)}건")
+            return result
         except Exception as e:
             logger.error(f"아파트 전월세 실거래가 조회 오류: {e}")
             return {"error": str(e)}
@@ -89,10 +115,18 @@ class RealEstateAPI:
             "pageNo": 1
         }
         
+        logger.info(f"MCP 오피스텔 매매 실거래가 조회 시작 - 지역코드: {lawd_cd}, 계약년월: {deal_ymd}")
+        logger.debug(f"API 호출 URL: {endpoint}")
+        logger.debug(f"API 요청 파라미터: {params}")
+        
         try:
             response = await self.client.get(endpoint, params=params)
+            logger.debug(f"API 응답 상태코드: {response.status_code}")
             response.raise_for_status()
-            return self._parse_xml_response(response.text)
+            
+            result = self._parse_xml_response(response.text)
+            logger.info(f"MCP 오피스텔 매매 실거래가 조회 완료 - 총 {result.get('total_count', 0)}건")
+            return result
         except Exception as e:
             logger.error(f"오피스텔 매매 실거래가 조회 오류: {e}")
             return {"error": str(e)}
@@ -102,6 +136,7 @@ class RealEstateAPI:
         import xml.etree.ElementTree as ET
         
         try:
+            logger.debug("XML 응답 파싱 시작")
             root = ET.fromstring(xml_text)
             items = []
             
@@ -112,12 +147,15 @@ class RealEstateAPI:
                     item_data[child.tag] = child.text
                 items.append(item_data)
             
+            logger.debug(f"XML 파싱 완료 - {len(items)}개 항목 추출")
             return {"items": items, "total_count": len(items)}
         except Exception as e:
             logger.error(f"XML 파싱 오류: {e}")
+            logger.debug(f"파싱 실패한 XML 내용: {xml_text[:500]}...")  # 처음 500자만 로그
             return {"error": f"XML 파싱 실패: {e}"}
 
 # API 클라이언트 인스턴스
+logger.info(f"MCP RealEstateAPI 초기화 - API 키 설정 여부: {bool(MOLIT_API_KEY)}")
 real_estate_api = RealEstateAPI(MOLIT_API_KEY)
 
 @app.list_resources()
@@ -288,11 +326,14 @@ async def handle_list_tools() -> list[Tool]:
 @app.call_tool()
 async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent]:
     """도구 호출 처리"""
+    logger.info(f"MCP 도구 호출 - 도구명: {name}, 파라미터: {arguments}")
+    
     if name == "get_apartment_trade":
         lawd_cd = arguments.get("lawd_cd")
         deal_ymd = arguments.get("deal_ymd") 
         
         if not lawd_cd or not deal_ymd:
+            logger.warning("필수 파라미터 누락 - lawd_cd 또는 deal_ymd")
             return [types.TextContent(
                 type="text",
                 text="지역코드(lawd_cd)와 계약년월(deal_ymd)이 필요합니다."
@@ -310,6 +351,7 @@ async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent
         deal_ymd = arguments.get("deal_ymd")
         
         if not lawd_cd or not deal_ymd:
+            logger.warning("필수 파라미터 누락 - lawd_cd 또는 deal_ymd")
             return [types.TextContent(
                 type="text",
                 text="지역코드(lawd_cd)와 계약년월(deal_ymd)이 필요합니다."
@@ -327,6 +369,7 @@ async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent
         deal_ymd = arguments.get("deal_ymd")
         
         if not lawd_cd or not deal_ymd:
+            logger.warning("필수 파라미터 누락 - lawd_cd 또는 deal_ymd")
             return [types.TextContent(
                 type="text",
                 text="지역코드(lawd_cd)와 계약년월(deal_ymd)이 필요합니다."
@@ -340,6 +383,7 @@ async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent
         )]
     
     else:
+        logger.error(f"알 수 없는 도구 호출: {name}")
         raise ValueError(f"알 수 없는 도구: {name}")
 
 async def main():

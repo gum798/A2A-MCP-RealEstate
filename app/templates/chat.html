@@ -3,14 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>투심이 & 삼돌이 - 부동산 상담</title>
+    <title>투심이 & 삼돌이 - 고급 부동산 상담</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 25%, #dee2e6 50%, #e9ecef 75%, #f8f9fa 100%);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             height: 100vh;
+            overflow: hidden;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 50%, rgba(240,240,240,0.2) 100%);
+            pointer-events: none;
+            z-index: -1;
         }
         
         .chat-container {
@@ -20,10 +33,11 @@
         }
         
         .chat-header {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.8);
             padding: 1rem;
-            border-bottom: 1px solid #dee2e6;
-            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
         }
         
         .character-info {
@@ -45,18 +59,23 @@
         }
         
         .toosim {
-            background: linear-gradient(45deg, #FF6B6B, #FF8E8E);
+            background: linear-gradient(45deg, rgba(100, 149, 237, 0.8), rgba(135, 206, 250, 0.8));
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.1);
         }
         
         .samdol {
-            background: linear-gradient(45deg, #4ECDC4, #44A08D);
+            background: linear-gradient(45deg, rgba(72, 201, 176, 0.8), rgba(64, 224, 208, 0.8));
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.1);
         }
         
         .chat-messages {
             flex: 1;
             overflow-y: auto;
             padding: 1rem;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
         }
         
         .message {
@@ -71,19 +90,28 @@
         }
         
         .message.user .message-content {
-            background: #007bff;
+            background: rgba(100, 149, 237, 0.7);
             color: white;
             margin-left: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(15px);
+            box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.1);
         }
         
         .message.toosim .message-content {
-            background: linear-gradient(45deg, #FF6B6B, #FF8E8E);
+            background: rgba(100, 149, 237, 0.6);
             color: white;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(15px);
+            box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.1);
         }
         
         .message.samdol .message-content {
-            background: linear-gradient(45deg, #4ECDC4, #44A08D);
+            background: rgba(72, 201, 176, 0.6);
             color: white;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(15px);
+            box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.1);
         }
         
         .message-content {
@@ -91,8 +119,10 @@
             border-radius: 1rem;
             max-width: 70%;
             word-wrap: break-word;
-            background: white;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(15px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
         }
         
         .message-avatar {
@@ -109,32 +139,149 @@
         }
         
         .chat-input {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.8);
             padding: 1rem;
-            border-top: 1px solid #dee2e6;
-            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 -8px 32px 0 rgba(0, 0, 0, 0.1);
         }
         
         .property-form {
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 15px;
             padding: 1rem;
             margin-bottom: 1rem;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
         }
         
         .form-control, .btn {
-            border-radius: 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.7);
+            color: #333;
+            backdrop-filter: blur(10px);
+        }
+        
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: rgba(100, 149, 237, 0.5);
+            color: #333;
+            box-shadow: 0 0 0 0.2rem rgba(100, 149, 237, 0.1);
+        }
+        
+        .form-control::placeholder {
+            color: rgba(0, 0, 0, 0.5);
         }
         
         .btn-send {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            border: none;
+            background: rgba(100, 149, 237, 0.8);
+            border: 1px solid rgba(100, 149, 237, 0.5);
             color: white;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.1);
         }
         
         .btn-send:hover {
-            background: linear-gradient(45deg, #764ba2, #667eea);
+            background: rgba(100, 149, 237, 0.9);
+            border-color: rgba(100, 149, 237, 0.7);
             color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px 0 rgba(100, 149, 237, 0.3);
+        }
+        
+        .btn-outline-secondary, .btn-outline-primary, .btn-outline-info {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            color: #333;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-outline-secondary:hover, .btn-outline-primary:hover, .btn-outline-info:hover {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: rgba(100, 149, 237, 0.5);
+            color: #333;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px 0 rgba(100, 149, 237, 0.2);
+        }
+        
+        .character-info h6 {
+            color: #333;
+            margin-bottom: 0;
+            font-weight: 600;
+        }
+        
+        .character-info .text-muted {
+            color: rgba(0, 0, 0, 0.6) !important;
+        }
+        
+        /* Smooth transitions for all glassmorphism elements */
+        .btn, .form-control, .message-content, .property-form {
+            transition: all 0.3s ease;
+        }
+        
+        /* Enhanced scrollbar styling */
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 3px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: rgba(100, 149, 237, 0.5);
+            border-radius: 3px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 149, 237, 0.7);
+        }
+        
+        /* 부동산 정보 표시 스타일 */
+        .property-display {
+            margin-bottom: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .property-info-card {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(100, 149, 237, 0.3);
+            border-radius: 15px;
+            padding: 1rem;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 8px 32px 0 rgba(100, 149, 237, 0.1);
+            margin: 0.5rem;
+        }
+        
+        .property-info-card h6 {
+            color: rgba(100, 149, 237, 0.9);
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .property-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+        
+        .property-item {
+            background: rgba(100, 149, 237, 0.1);
+            border: 1px solid rgba(100, 149, 237, 0.2);
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.9rem;
+            color: #333;
+        }
+        
+        .property-item strong {
+            color: rgba(100, 149, 237, 0.9);
         }
         
         .questions {
@@ -148,8 +295,12 @@
             display: none;
             padding: 0.5rem 1rem;
             background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 1rem;
             margin: 0.5rem 0;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.1);
+            color: #333;
         }
         
         .typing-dots {
@@ -161,7 +312,7 @@
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: #666;
+            background: rgba(100, 149, 237, 0.8);
             animation: typing 1.4s infinite;
         }
         
@@ -176,7 +327,13 @@
         .welcome-message {
             text-align: center;
             padding: 2rem;
-            color: rgba(255, 255, 255, 0.9);
+            color: #333;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 20px;
+            margin: 2rem;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
         }
         
         .welcome-message h3 {
@@ -217,6 +374,14 @@
         
         <!-- 채팅 메시지 영역 -->
         <div class="chat-messages" id="chatMessages">
+            <!-- 부동산 정보 표시 영역 -->
+            <div class="property-display" id="propertyDisplay" style="display: none;">
+                <div class="property-info-card">
+                    <h6><i class="fas fa-home"></i> 입력된 부동산 정보</h6>
+                    <div class="property-details" id="propertyDetails"></div>
+                </div>
+            </div>
+            
             <div class="welcome-message">
                 <h3>🏠 부동산 상담을 시작해보세요!</h3>
                 <p>투심이와 삼돌이가 함께 부동산을 분석해드립니다.<br>
@@ -241,16 +406,16 @@
                 <h6 class="mb-3"><i class="fas fa-home"></i> 부동산 정보 (선택사항)</h6>
                 <div class="row g-2">
                     <div class="col-md-6">
-                        <input type="text" class="form-control" id="address" placeholder="주소 (예: 서울 강남구)">
+                        <input type="text" class="form-control" id="address" placeholder="주소 (예: 서울 강남구)" oninput="updatePropertyDisplay()" onchange="updatePropertyDisplay()">
                     </div>
                     <div class="col-md-2">
-                        <input type="number" class="form-control" id="price" placeholder="가격(만원)">
+                        <input type="number" class="form-control" id="price" placeholder="가격(만원)" oninput="updatePropertyDisplay()" onchange="updatePropertyDisplay()">
                     </div>
                     <div class="col-md-2">
-                        <input type="number" class="form-control" id="area" placeholder="면적(㎡)">
+                        <input type="number" class="form-control" id="area" placeholder="면적(㎡)" oninput="updatePropertyDisplay()" onchange="updatePropertyDisplay()">
                     </div>
                     <div class="col-md-2">
-                        <input type="number" class="form-control" id="floor" placeholder="층수">
+                        <input type="number" class="form-control" id="floor" placeholder="층수" oninput="updatePropertyDisplay()" onchange="updatePropertyDisplay()">
                     </div>
                 </div>
                 <div class="mt-2">
@@ -309,6 +474,40 @@
             document.getElementById('price').value = '';
             document.getElementById('area').value = '';
             document.getElementById('floor').value = '';
+            updatePropertyDisplay();
+        }
+        
+        function updatePropertyDisplay() {
+            const address = document.getElementById('address').value.trim();
+            const price = document.getElementById('price').value.trim();
+            const area = document.getElementById('area').value.trim();
+            const floor = document.getElementById('floor').value.trim();
+            
+            const propertyDisplay = document.getElementById('propertyDisplay');
+            const propertyDetails = document.getElementById('propertyDetails');
+            
+            // 입력된 정보가 하나라도 있으면 표시
+            if (address || price || area || floor) {
+                let detailsHtml = '';
+                
+                if (address) {
+                    detailsHtml += `<div class="property-item"><strong>주소:</strong> ${address}</div>`;
+                }
+                if (price) {
+                    detailsHtml += `<div class="property-item"><strong>가격:</strong> ${parseInt(price).toLocaleString()}만원</div>`;
+                }
+                if (area) {
+                    detailsHtml += `<div class="property-item"><strong>면적:</strong> ${area}㎡</div>`;
+                }
+                if (floor) {
+                    detailsHtml += `<div class="property-item"><strong>층수:</strong> ${floor}층</div>`;
+                }
+                
+                propertyDetails.innerHTML = detailsHtml;
+                propertyDisplay.style.display = 'block';
+            } else {
+                propertyDisplay.style.display = 'none';
+            }
         }
         
         function handleKeyPress(event) {

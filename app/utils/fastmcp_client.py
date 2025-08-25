@@ -228,19 +228,28 @@ class FastMCPClient:
             if result is None:
                 logger.info("방법 4: 직접 함수 매핑 사용")
                 function_map = await self._get_direct_function_map()
+                logger.debug(f"사용 가능한 함수 매핑: {list(function_map.keys())}")
                 if tool_name in function_map:
                     try:
                         func = function_map[tool_name]
+                        logger.debug(f"함수 타입: {type(func)}, hasattr fn: {hasattr(func, 'fn')}")
                         # FunctionTool 객체인 경우 실제 함수 추출
                         if hasattr(func, 'fn') and callable(func.fn):
+                            logger.debug("FunctionTool.fn 호출")
                             result = await func.fn(**arguments)
                         else:
+                            logger.debug("직접 함수 호출")
                             result = await func(**arguments)
                         logger.info("직접 함수 매핑 방법 성공")
                     except Exception as e:
-                        logger.warning(f"직접 함수 매핑 방법 실패: {e}")
+                        import traceback
+                        logger.error(f"직접 함수 매핑 방법 실패: {e}")
+                        logger.error(f"상세 오류: {traceback.format_exc()}")
+                else:
+                    logger.warning(f"도구 '{tool_name}'가 함수 매핑에 없음")
             
             if result is None:
+                logger.error("모든 방법 시도 후에도 결과가 None")
                 raise Exception(f"모든 방법으로 도구 '{tool_name}' 호출 실패")
             
             logger.info(f"MCP 도구 '{tool_name}' 호출 완료, 결과: {result}")

@@ -10,10 +10,108 @@ import json
 import random
 from loguru import logger
 
+# MCP 클라이언트 import
+from ..utils.fastmcp_client import (
+    call_real_estate_mcp_tool,
+    call_location_mcp_tool
+)
+
 # Gemini API 설정
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
+
+
+async def get_mcp_data_for_analysis(property_data: Dict[str, Any]) -> Dict[str, Any]:
+    """MCP 서버에서 부동산 관련 데이터를 수집"""
+    logger.info(f"📊 MCP 데이터 수집 시작 - 입력 데이터: {property_data}")
+    
+    mcp_data = {
+        "real_estate_analysis": None,
+        "location_info": None,
+        "investment_evaluation": None,
+        "life_quality_evaluation": None,
+        "similar_properties": None,
+        "mcp_calls_made": []
+    }
+    
+    try:
+        # 주소가 있으면 위치 정보 조회
+        address = property_data.get("address", "")
+        if address:
+            logger.info(f"🗺️ 주소 '{address}'에 대한 위치 정보 조회 시작")
+            
+            # 위치 좌표 변환
+            coords_result = await call_location_mcp_tool("address_to_coordinates", {"address": address})
+            mcp_data["mcp_calls_made"].append(f"address_to_coordinates: {coords_result.get('success', False)}")
+            logger.info(f"📍 좌표 변환 결과: {coords_result}")
+            
+            if coords_result.get("success"):
+                mcp_data["location_info"] = coords_result.get("data")
+                
+                # 주변 시설 정보
+                location_data = coords_result.get("data", {})
+                if isinstance(location_data, dict) and "coordinates" in location_data:
+                    coords = location_data["coordinates"]
+                    logger.info(f"🏢 좌표 ({coords['lat']}, {coords['lng']})의 주변 시설 조회")
+                    
+                    facilities_result = await call_location_mcp_tool("find_nearby_facilities", {
+                        "latitude": coords["lat"], 
+                        "longitude": coords["lng"]
+                    })
+                    mcp_data["mcp_calls_made"].append(f"find_nearby_facilities: {facilities_result.get('success', False)}")
+                    logger.info(f"🏪 주변 시설 조회 결과: {facilities_result}")
+                    
+                    if facilities_result.get("success"):
+                        if mcp_data["location_info"] is None:
+                            mcp_data["location_info"] = {}
+                        mcp_data["location_info"]["nearby_facilities"] = facilities_result.get("data")
+        
+        # 부동산 투자가치 평가
+        logger.info("💰 부동산 투자가치 평가 시작")
+        investment_result = await call_real_estate_mcp_tool("evaluate_investment_value", property_data)
+        mcp_data["mcp_calls_made"].append(f"evaluate_investment_value: {investment_result.get('success', False)}")
+        logger.info(f"📈 투자가치 평가 결과: {investment_result}")
+        
+        if investment_result.get("success"):
+            mcp_data["investment_evaluation"] = investment_result.get("data")
+            
+        # 삶의질 가치 평가
+        logger.info("🏡 삶의질 가치 평가 시작")
+        life_quality_result = await call_real_estate_mcp_tool("evaluate_life_quality", property_data)
+        mcp_data["mcp_calls_made"].append(f"evaluate_life_quality: {life_quality_result.get('success', False)}")
+        logger.info(f"🌱 삶의질 평가 결과: {life_quality_result}")
+        
+        if life_quality_result.get("success"):
+            mcp_data["life_quality_evaluation"] = life_quality_result.get("data")
+            
+        # 유사 매물 비교
+        logger.info("🏠 유사 매물 비교 시작")
+        similar_result = await call_real_estate_mcp_tool("compare_similar_properties", property_data)
+        mcp_data["mcp_calls_made"].append(f"compare_similar_properties: {similar_result.get('success', False)}")
+        logger.info(f"📋 유사 매물 비교 결과: {similar_result}")
+        
+        if similar_result.get("success"):
+            mcp_data["similar_properties"] = similar_result.get("data")
+            
+        # 추가로 부동산 통계 정보도 수집
+        if address:
+            logger.info("📊 지역 가격 통계 조회")
+            stats_result = await call_real_estate_mcp_tool("get_regional_price_statistics", {"region": address})
+            mcp_data["mcp_calls_made"].append(f"get_regional_price_statistics: {stats_result.get('success', False)}")
+            logger.info(f"📈 지역 통계 결과: {stats_result}")
+            
+            if stats_result.get("success"):
+                mcp_data["regional_statistics"] = stats_result.get("data")
+    
+    except Exception as e:
+        logger.error(f"❌ MCP 데이터 수집 중 오류: {e}")
+        import traceback
+        logger.error(f"상세 오류: {traceback.format_exc()}")
+        mcp_data["error"] = str(e)
+    
+    logger.info(f"✅ MCP 데이터 수집 완료 - 호출 결과: {mcp_data['mcp_calls_made']}")
+    return mcp_data
 
 class LLMInvestmentAgent:
     """투심이 - LLM 기반 투자가치 평가 에이전트"""
@@ -21,7 +119,18 @@ class LLMInvestmentAgent:
     def __init__(self):
         self.name = "투심이"
         self.personality = "투자 중심적, 현실적, 수익성 추구"
-        self.model = genai.GenerativeModel('gemini-2.5-flash') if GEMINI_API_KEY else None
+        if GEMINI_API_KEY:
+            self.model = genai.GenerativeModel(
+                'gemini-2.5-flash',
+                safety_settings={
+                    genai.types.HarmCategory.HARM_CATEGORY_HATE_SPEECH: genai.types.HarmBlockThreshold.BLOCK_NONE,
+                    genai.types.HarmCategory.HARM_CATEGORY_HARASSMENT: genai.types.HarmBlockThreshold.BLOCK_NONE,
+                    genai.types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: genai.types.HarmBlockThreshold.BLOCK_NONE,
+                    genai.types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: genai.types.HarmBlockThreshold.BLOCK_NONE,
+                }
+            )
+        else:
+            self.model = None
         
     def _get_character_prompt(self) -> str:
         """투심이의 캐릭터 프롬프트"""
@@ -52,30 +161,54 @@ class LLMInvestmentAgent:
 """
 
     async def analyze_property_llm(self, property_data: Dict[str, Any], user_message: str = "") -> Dict[str, Any]:
-        """LLM을 사용한 부동산 투자가치 분석"""
+        """LLM을 사용한 부동산 투자가치 분석 - MCP 데이터 활용"""
         
         if not self.model:
             # Fallback to static response
             return self._fallback_response(property_data)
         
         try:
+            # MCP 서버에서 실제 데이터 수집
+            mcp_data = await get_mcp_data_for_analysis(property_data)
+            
             prompt = f"""
 {self._get_character_prompt()}
 
 ## 분석할 부동산 정보:
 {json.dumps(property_data, ensure_ascii=False, indent=2)}
 
+## MCP 서버에서 수집한 실제 데이터:
+{json.dumps(mcp_data, ensure_ascii=False, indent=2)}
+
 ## 사용자 메시지:
 {user_message if user_message else "부동산 투자 관점에서 분석해주세요"}
 
+⚠️ 중요 지침:
+- MCP 서버에서 수집한 실제 데이터가 있으면 반드시 그 데이터를 기반으로 분석하세요
+- investment_evaluation 데이터가 있으면 그 점수와 평가를 인용하세요
+- location_info가 있으면 실제 위치와 주변 시설 정보를 활용하세요
+- regional_statistics가 있으면 지역 평균 가격과 비교 분석하세요
+- similar_properties가 있으면 유사 매물과의 비교를 포함하세요
+- MCP 데이터가 없거나 실패한 경우에만 일반적인 분석을 제공하세요
+
 투심이의 캐릭터로 위 부동산을 투자 관점에서 분석하고, 위 JSON 형식으로 응답해주세요.
-특히 가격 대비 수익성, 향후 가치 상승 가능성, 임대 수익 등을 고려해주세요.
+실제 MCP 데이터를 적극 활용하여 구체적이고 정확한 투자 분석을 제공해주세요!
 """
             
             response = self.model.generate_content(prompt)
             
             # JSON 응답 파싱 시도
             try:
+                # 응답 유효성 검사
+                if not response or not response.candidates:
+                    logger.warning(f"Empty response from Gemini API for {self.name}")
+                    return self._fallback_response(property_data)
+                
+                candidate = response.candidates[0]
+                if not candidate.content or not candidate.content.parts:
+                    logger.warning(f"No content parts in response for {self.name}")
+                    return self._fallback_response(property_data)
+                
                 # 응답에서 JSON 부분 추출
                 response_text = response.text
                 if "```json" in response_text:
@@ -143,7 +276,18 @@ class LLMLifeQualityAgent:
     def __init__(self):
         self.name = "삼돌이"
         self.personality = "생활 중심적, 감성적, 편안함 추구"
-        self.model = genai.GenerativeModel('gemini-2.5-flash') if GEMINI_API_KEY else None
+        if GEMINI_API_KEY:
+            self.model = genai.GenerativeModel(
+                'gemini-2.5-flash',
+                safety_settings={
+                    genai.types.HarmCategory.HARM_CATEGORY_HATE_SPEECH: genai.types.HarmBlockThreshold.BLOCK_NONE,
+                    genai.types.HarmCategory.HARM_CATEGORY_HARASSMENT: genai.types.HarmBlockThreshold.BLOCK_NONE,
+                    genai.types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: genai.types.HarmBlockThreshold.BLOCK_NONE,
+                    genai.types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: genai.types.HarmBlockThreshold.BLOCK_NONE,
+                }
+            )
+        else:
+            self.model = None
     
     def _get_character_prompt(self) -> str:
         """삼돌이의 캐릭터 프롬프트"""
@@ -173,29 +317,55 @@ class LLMLifeQualityAgent:
 }
 """
 
-    async def analyze_property_llm(self, property_data: Dict[str, Any], user_message: str = "") -> Dict[str, Any]:
-        """LLM을 사용한 부동산 삶의질 분석"""
+    async def analyze_property_llm(self, property_data: Dict[str, Any], user_message: str = "", mcp_data: Dict[str, Any] = None) -> Dict[str, Any]:
+        """LLM을 사용한 부동산 삶의질 분석 - MCP 데이터 활용"""
         
         if not self.model:
             return self._fallback_response(property_data)
         
         try:
+            # MCP 데이터가 없으면 새로 수집 (투심이가 이미 수집했으면 재사용)
+            if not mcp_data:
+                mcp_data = await get_mcp_data_for_analysis(property_data)
+            
             prompt = f"""
 {self._get_character_prompt()}
 
 ## 분석할 부동산 정보:
 {json.dumps(property_data, ensure_ascii=False, indent=2)}
 
+## MCP 서버에서 수집한 실제 데이터:
+{json.dumps(mcp_data, ensure_ascii=False, indent=2)}
+
 ## 사용자 메시지:
 {user_message if user_message else "생활환경 관점에서 분석해주세요"}
 
+⚠️ 중요 지침:
+- MCP 서버에서 수집한 실제 데이터가 있으면 반드시 그 데이터를 기반으로 분석하세요
+- life_quality_evaluation 데이터가 있으면 그 점수와 평가를 인용하세요
+- location_info의 nearby_facilities가 있으면 실제 주변 시설 정보를 활용하세요
+- 지하철역, 병원, 학교, 쇼핑센터 등의 접근성을 구체적으로 언급하세요
+- regional_statistics가 있으면 지역의 생활환경 특성을 분석하세요
+- similar_properties가 있으면 다른 매물과의 생활환경 비교를 포함하세요
+- MCP 데이터가 없거나 실패한 경우에만 일반적인 분석을 제공하세요
+
 삼돌이의 캐릭터로 위 부동산을 생활환경 관점에서 분석하고, 위 JSON 형식으로 응답해주세요.
-특히 환경, 편의시설, 안전성, 교육환경, 문화시설 등 실제 거주 시의 편의성을 고려해주세요.
+실제 MCP 데이터를 적극 활용하여 구체적이고 정확한 생활환경 분석을 제공해주세요!
 """
             
             response = self.model.generate_content(prompt)
             
             try:
+                # 응답 유효성 검사
+                if not response or not response.candidates:
+                    logger.warning(f"Empty response from Gemini API for {self.name}")
+                    return self._fallback_response(property_data)
+                
+                candidate = response.candidates[0]
+                if not candidate.content or not candidate.content.parts:
+                    logger.warning(f"No content parts in response for {self.name}")
+                    return self._fallback_response(property_data)
+                
                 response_text = response.text
                 if "```json" in response_text:
                     json_start = response_text.find("```json") + 7
@@ -263,14 +433,19 @@ class LLMCharacterAgentManager:
     
     async def analyze_property_with_llm(self, property_data: Dict[str, Any], 
                                       user_message: str = "") -> Dict[str, Any]:
-        """LLM 기반 캐릭터들이 함께 부동산을 분석"""
+        """LLM 기반 캐릭터들이 함께 부동산을 분석 - MCP 데이터 활용"""
         
-        # 투심이가 먼저 분석 (LLM)
+        # MCP 데이터를 한 번만 수집하여 효율성 향상
+        logger.info("MCP 서버에서 부동산 데이터 수집 중...")
+        mcp_data = await get_mcp_data_for_analysis(property_data)
+        logger.info(f"MCP 데이터 수집 완료: {list(mcp_data.keys())}")
+        
+        # 투심이가 먼저 분석 (LLM + MCP 데이터)
         investment_analysis = await self.investment_agent.analyze_property_llm(property_data, user_message)
         
-        # 삼돌이가 이어서 분석 (LLM, 투심이 의견 참고)
+        # 삼돌이가 이어서 분석 (LLM + MCP 데이터, 투심이 의견 참고)
         enhanced_message = f"{user_message}\n\n투심이 의견: {investment_analysis.get('comment', '')}"
-        life_quality_analysis = await self.life_quality_agent.analyze_property_llm(property_data, enhanced_message)
+        life_quality_analysis = await self.life_quality_agent.analyze_property_llm(property_data, enhanced_message, mcp_data)
         
         # 대화 기록 저장
         self.conversation_history.append({
