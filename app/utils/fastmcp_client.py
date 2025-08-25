@@ -6,6 +6,7 @@ FastMCP의 내부 API를 활용하여 도구와 리소스에 접근
 import asyncio
 import json
 from typing import Dict, Any, List, Optional
+import inspect
 
 from ..utils.logger import logger
 
@@ -108,7 +109,35 @@ class FastMCPClient:
                                 logger.info(f"arguments: {arguments}")
                                 
                                 if callable(actual_func):
-                                    result = await actual_func(**arguments)
+                                    # 호출할 함수의 시그니처를 확인하여 유효한 인자만 전달
+                                    sig = inspect.signature(actual_func)
+                                    valid_args = {
+                                        key: value for key, value in arguments.items()
+                                        if key in sig.parameters
+                                    }
+                                    
+                                    # evaluate_life_quality와 evaluate_investment_value 함수의 경우 누락된 필수 인자에 대한 기본값 제공
+                                    if tool_name in ["evaluate_life_quality", "evaluate_investment_value"]:
+                                        required_params = {
+                                            "address": "서울특별시 강남구 테헤란로 123",  # 기본 주소
+                                            "price": 100000,  # 기본값: 1억원 (만원 단위)
+                                            "area": 84.0,  # 기본값: 84㎡
+                                            "floor": 5,  # 기본값: 5층
+                                            "total_floor": 10,  # 기본값: 10층
+                                            "building_year": 2015,  # 기본값: 2015년
+                                            "property_type": "아파트",  # 기본값: 아파트
+                                            "deal_type": "매매"  # 기본값: 매매
+                                        }
+                                        
+                                        for param_name, default_value in required_params.items():
+                                            if param_name in sig.parameters and (param_name not in valid_args or valid_args[param_name] is None):
+                                                valid_args[param_name] = default_value
+                                                logger.info(f"'{tool_name}' 호출 시 누락된/None인 필수 인자 '{param_name}'에 기본값 '{default_value}' 적용")
+                                    
+                                    if len(valid_args) < len(arguments):
+                                        logger.warning(f"'{tool_name}' 호출 시 일부 인자 제외됨. 원본: {list(arguments.keys())}, 사용: {list(valid_args.keys())}")
+
+                                    result = await actual_func(**valid_args)
                                     logger.info(f"get_tools()[].fn 방법 성공, result: {result}")
                                 else:
                                     logger.warning("tool_func.fn이 callable하지 않음")
@@ -181,7 +210,35 @@ class FastMCPClient:
                             try:
                                 actual_func = tool.fn
                                 if callable(actual_func):
-                                    result = await actual_func(**arguments)
+                                    # 호출할 함수의 시그니처를 확인하여 유효한 인자만 전달
+                                    sig = inspect.signature(actual_func)
+                                    valid_args = {
+                                        key: value for key, value in arguments.items()
+                                        if key in sig.parameters
+                                    }
+                                    
+                                    # evaluate_life_quality와 evaluate_investment_value 함수의 경우 누락된 필수 인자에 대한 기본값 제공
+                                    if tool_name in ["evaluate_life_quality", "evaluate_investment_value"]:
+                                        required_params = {
+                                            "address": "서울특별시 강남구 테헤란로 123",  # 기본 주소
+                                            "price": 100000,  # 기본값: 1억원 (만원 단위)
+                                            "area": 84.0,  # 기본값: 84㎡
+                                            "floor": 5,  # 기본값: 5층
+                                            "total_floor": 10,  # 기본값: 10층
+                                            "building_year": 2015,  # 기본값: 2015년
+                                            "property_type": "아파트",  # 기본값: 아파트
+                                            "deal_type": "매매"  # 기본값: 매매
+                                        }
+                                        
+                                        for param_name, default_value in required_params.items():
+                                            if param_name in sig.parameters and (param_name not in valid_args or valid_args[param_name] is None):
+                                                valid_args[param_name] = default_value
+                                                logger.info(f"'{tool_name}' 호출 시 누락된/None인 필수 인자 '{param_name}'에 기본값 '{default_value}' 적용")
+
+                                    if len(valid_args) < len(arguments):
+                                        logger.warning(f"'{tool_name}' 호출 시 일부 인자 제외됨. 원본: {list(arguments.keys())}, 사용: {list(valid_args.keys())}")
+                                    
+                                    result = await actual_func(**valid_args)
                                     logger.info("get_tool().fn 방법 성공")
                                 else:
                                     logger.warning("get_tool().fn이 callable하지 않음")
@@ -233,13 +290,45 @@ class FastMCPClient:
                     try:
                         func = function_map[tool_name]
                         logger.debug(f"함수 타입: {type(func)}, hasattr fn: {hasattr(func, 'fn')}")
-                        # FunctionTool 객체인 경우 실제 함수 추출
+                        
+                        actual_func_to_call = None
                         if hasattr(func, 'fn') and callable(func.fn):
-                            logger.debug("FunctionTool.fn 호출")
-                            result = await func.fn(**arguments)
+                            logger.debug("FunctionTool.fn을 실제 함수로 사용")
+                            actual_func_to_call = func.fn
+                        elif callable(func):
+                            logger.debug("매핑된 함수를 직접 사용")
+                            actual_func_to_call = func
+
+                        if actual_func_to_call:
+                            # 호출할 함수의 시그니처를 확인하여 유효한 인자만 전달
+                            sig = inspect.signature(actual_func_to_call)
+                            valid_args = {
+                                key: value for key, value in arguments.items()
+                                if key in sig.parameters
+                            }
+                            
+                            # evaluate_life_quality와 evaluate_investment_value 함수의 경우 누락된 필수 인자에 대한 기본값 제공
+                            if tool_name in ["evaluate_life_quality", "evaluate_investment_value"]:
+                                required_params = {
+                                    "total_floor": 10,  # 기본값: 10층
+                                    "building_year": 2015,  # 기본값: 2015년
+                                    "property_type": "아파트",  # 기본값: 아파트
+                                    "deal_type": "매매"  # 기본값: 매매
+                                }
+                                
+                                for param_name, default_value in required_params.items():
+                                    if param_name in sig.parameters and param_name not in valid_args:
+                                        valid_args[param_name] = default_value
+                                        logger.info(f"'{tool_name}' 호출 시 누락된 필수 인자 '{param_name}'에 기본값 '{default_value}' 적용")
+                            
+                            if len(valid_args) < len(arguments):
+                                logger.warning(f"제공된 인자 중 일부가 '{tool_name}' 함수 시그니처와 맞지 않아 제외됨")
+                                logger.warning(f"원본 인자: {list(arguments.keys())}")
+                                logger.warning(f"사용된 인자: {list(valid_args.keys())}")
+
+                            result = await actual_func_to_call(**valid_args)
                         else:
-                            logger.debug("직접 함수 호출")
-                            result = await func(**arguments)
+                            logger.error("호출할 수 있는 실제 함수를 찾지 못했습니다.")
                         logger.info("직접 함수 매핑 방법 성공")
                     except Exception as e:
                         import traceback

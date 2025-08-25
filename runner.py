@@ -112,14 +112,12 @@ def main():
         logger.info(f"   • Agent 테스트: http://localhost:{settings.port}/web/agent")
         logger.info(f"   • API 문서: http://localhost:{settings.port}/docs")
     else:
-        # Railway 배포 환경
-        railway_url = os.getenv("RAILWAY_PUBLIC_DOMAIN")
         # Render 배포 환경도 지원
         render_url = os.getenv("RENDER_EXTERNAL_URL")
-        deploy_url = railway_url or render_url
+        deploy_url = render_url
         
         if deploy_url:
-            platform_name = "Railway" if railway_url else "Render"
+            platform_name = "Render"
             logger.info(f"🌐 {platform_name} 배포 링크:")
             logger.info(f"   • 메인 페이지: https://{deploy_url}/web/")
             logger.info(f"   • 투심이&삼돌이 채팅: https://{deploy_url}/web/chat")

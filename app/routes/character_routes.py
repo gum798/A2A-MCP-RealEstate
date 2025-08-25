@@ -9,7 +9,7 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 
 from app.agent.character_agents import character_manager
-from app.agent.llm_character_agents import llm_character_manager
+from app.agent.llm_character_agents import llm_character_manager, extract_property_info_from_message
 from app.utils.logger import logger
 
 router = APIRouter()
@@ -66,13 +66,11 @@ async def chat_with_characters(request: ChatRequest):
                 "timestamp": datetime.now().isoformat()
             }
         else:
-            # 일반 대화 - LLM 기반으로 개선
-            sample_property = {
-                "address": "사용자가 제공한 주소가 없습니다",
-                "message": request.message
-            }
+            # 일반 대화 - LLM으로 주소 및 정보 추출 시도
+            property_data = await extract_property_info_from_message(request.message)
+            
             analysis = await llm_character_manager.analyze_property_with_llm(
-                sample_property, 
+                property_data, 
                 request.message
             )
             

@@ -22,6 +22,45 @@ if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
 
+async def extract_property_info_from_message(user_message: str) -> Dict[str, Any]:
+    """사용자 메시지에서 부동산 관련 정보를 추출하는 LLM 함수"""
+    logger.info(f"📝 사용자 메시지 정보 추출 시작: {user_message}")
+    if not GEMINI_API_KEY:
+        logger.warning("⚠️ Gemini API 키가 없어 정보 추출을 건너뜁니다.")
+        return {"address": user_message} # 키가 없으면 메시지 전체를 주소로 가정
+
+    try:
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        prompt = f"""
+사용자의 메시지에서 부동산 관련 정보를 추출하여 JSON 형식으로 반환해주세요.
+추출할 정보: 'address', 'area', 'price', 'building_year', 'property_type', 'deal_type'.
+정보가 없으면 null로 표시해주세요. 'address'는 필수입니다.
+
+사용자 메시지: "{user_message}"
+
+JSON 출력:
+"""
+        response = await model.generate_content_async(prompt)
+        
+        # 응답에서 JSON 부분 추출
+        response_text = response.text
+        json_start = response_text.find('{')
+        json_end = response_text.rfind('}') + 1
+        if json_start != -1 and json_end != -1:
+            json_text = response_text[json_start:json_end]
+            extracted_data = json.loads(json_text)
+            logger.info(f"✅ 정보 추출 완료: {extracted_data}")
+            return extracted_data
+        else:
+            logger.warning("JSON 응답을 찾을 수 없습니다. 메시지 전체를 주소로 사용합니다.")
+            return {"address": user_message}
+            
+    except Exception as e:
+        logger.error(f"❌ LLM 정보 추출 중 오류: {e}")
+        # 오류 발생 시 메시지 전체를 주소로 사용
+        return {"address": user_message}
+
+
 async def get_mcp_data_for_analysis(property_data: Dict[str, Any]) -> Dict[str, Any]:
     """MCP 서버에서 부동산 관련 데이터를 수집"""
     logger.info(f"📊 MCP 데이터 수집 시작 - 입력 데이터: {property_data}")
@@ -36,9 +75,76 @@ async def get_mcp_data_for_analysis(property_data: Dict[str, Any]) -> Dict[str, 
     }
     
     try:
-        # 주소가 있으면 위치 정보 조회
         address = property_data.get("address", "")
-        if address:
+        if not address:
+            logger.warning("⚠️ 주소 정보가 없어 MCP 데이터 수집을 건너<binary data, 1 bytes>니다.")
+            return mcp_data
+
+        # 1단계: 주소를 좌표 및 지역 정보로 변환
+        logger.info(f"🗺️ 주소 '{address}'의 좌표 및 지역 정보 조회 시작")
+        coords_result = await call_location_mcp_tool("address_to_coordinates", {"address": address})
+        mcp_data["mcp_calls_made"].append(f"address_to_coordinates: {coords_result.get('success', False)}")
+        logger.info(f"📍 좌표 변환 결과: {coords_result}")
+
+        if not coords_result.get("success"):
+            logger.error("주소 좌표 변환에 실패하여 데이터 수집을 중단합니다.")
+            return mcp_data
+
+        # API 키 오류 등으로 fallback 기본 좌표가 반환된 경우 경고만 하고 진행
+        if coords_result.get("fallback"):
+            logger.warning("주소 좌표 변환 실패로 기본 좌표를 사용합니다. 위치 기반 분석의 정확도가 낮을 수 있습니다.")
+            # fallback 응답을 location_data 구조에 맞게 재구성
+            location_data = {
+                "address": coords_result.get("address"),
+                "lat": coords_result.get("lat"),
+                "lon": coords_result.get("lon"),
+                "region": {} # 지역 정보 없음
+            }
+        else:
+            location_data = coords_result.get("data", {})
+
+        mcp_data["location_info"] = location_data
+        
+        # 2단계: 변환된 지역 정보로 상세 부동산 정보 조회
+        # region_codes.py와 연동하여 sido_cd, sgg_cd 추출 필요 (현재는 Naver API 결과에 의존)
+        # 임시로 전체 주소에서 구 이름 추출하여 시도
+        sgg_name = ""
+        if location_data.get("region", {}).get("region_2depth_name"):
+            sgg_name = location_data["region"]["region_2depth_name"]
+        
+        if sgg_name:
+            logger.info(f"🏠 '{sgg_name}' 기반 상세 정보 조회 시작")
+            # 참고: 실제로는 sgg_name을 sgg_cd로 변환하는 로직이 필요합니다.
+            # 현재는 get_real_estate_data_advanced가 이름으로도 일부 동작하는 것에 의존합니다.
+            property_details_result = await call_real_estate_mcp_tool(
+                "get_real_estate_data_advanced",
+                {"sido_cd": "11", "sgg_cd": "", "emd_name": sgg_name} # sido_cd는 여전히 임시
+            )
+            mcp_data["mcp_calls_made"].append(f"get_real_estate_data_advanced: {property_details_result.get('success', False)}")
+
+            if property_details_result.get("success"):
+                items = property_details_result.get("data", {}).get("response", {}).get("body", {}).get("items", [])
+                if items:
+                    main_property = items[0]
+                    property_data.setdefault("area", float(main_property.get("전용면적", "84.0").replace('㎡','')))
+                    property_data.setdefault("building_year", int(main_property.get("건축년도", "2015")))
+                    property_data.setdefault("price", main_property.get("거래금액_숫자", 100000))
+                    # lawd_cd는 여전히 정확한 변환 로직 필요
+                    property_data.setdefault("lawd_cd", "11680") # 임시
+                    logger.info(f"➕ 병합된 부동산 정보: {property_data}")
+        
+        # 위치 정보 재확인
+        if "location_info" in mcp_data and mcp_data["location_info"]:
+            coords = mcp_data["location_info"]
+            logger.info(f"🏢 좌표 ({coords.get('lat')}, {coords.get('lon')})의 주변 시설 조회")
+            
+            facilities_result = await call_location_mcp_tool("find_nearby_facilities", {
+                "latitude": coords.get('lat'), 
+                "longitude": coords.get('lon')
+            })
+            mcp_data["mcp_calls_made"].append(f"find_nearby_facilities: {facilities_result.get('success', False)}")
+            if facilities_result.get("success"):
+                mcp_data["location_info"]["nearby_facilities"] = facilities_result.get("data")
             logger.info(f"🗺️ 주소 '{address}'에 대한 위치 정보 조회 시작")
             
             # 위치 좌표 변환
@@ -67,6 +173,21 @@ async def get_mcp_data_for_analysis(property_data: Dict[str, Any]) -> Dict[str, 
                             mcp_data["location_info"] = {}
                         mcp_data["location_info"]["nearby_facilities"] = facilities_result.get("data")
         
+        # 필수 매개변수의 기본값 설정 (None 값도 교체)
+        if not property_data.get("address"):
+            property_data["address"] = "서울특별시 강남구 테헤란로 123"
+        if not property_data.get("price"):
+            property_data["price"] = 100000
+        if not property_data.get("area"):
+            property_data["area"] = 84.0
+        if not property_data.get("floor"):
+            property_data["floor"] = 5
+        property_data.setdefault("total_floor", 10)
+        property_data.setdefault("building_year", 2015) 
+        property_data.setdefault("property_type", "아파트")
+        property_data.setdefault("deal_type", "매매")
+        logger.info(f"📊 기본값 보완된 부동산 데이터: {property_data}")
+        
         # 부동산 투자가치 평가
         logger.info("💰 부동산 투자가치 평가 시작")
         investment_result = await call_real_estate_mcp_tool("evaluate_investment_value", property_data)
@@ -85,14 +206,17 @@ async def get_mcp_data_for_analysis(property_data: Dict[str, Any]) -> Dict[str, 
         if life_quality_result.get("success"):
             mcp_data["life_quality_evaluation"] = life_quality_result.get("data")
             
-        # 유사 매물 비교
-        logger.info("🏠 유사 매물 비교 시작")
-        similar_result = await call_real_estate_mcp_tool("compare_similar_properties", property_data)
-        mcp_data["mcp_calls_made"].append(f"compare_similar_properties: {similar_result.get('success', False)}")
-        logger.info(f"📋 유사 매물 비교 결과: {similar_result}")
-        
-        if similar_result.get("success"):
-            mcp_data["similar_properties"] = similar_result.get("data")
+        # 유사 매물 비교 (필수 정보 확인 후 호출)
+        if all(k in property_data for k in ["address", "area", "building_year", "lawd_cd"]):
+            logger.info("🏠 유사 매물 비교 시작")
+            similar_result = await call_real_estate_mcp_tool("compare_similar_properties", property_data)
+            mcp_data["mcp_calls_made"].append(f"compare_similar_properties: {similar_result.get('success', False)}")
+            logger.info(f"📋 유사 매물 비교 결과: {similar_result}")
+            
+            if similar_result.get("success"):
+                mcp_data["similar_properties"] = similar_result.get("data")
+        else:
+            logger.warning("⚠️ 유사 매물 비교에 필요한 정보(주소, 면적, 건축년도, 지역코드)가 부족하여 스킵합니다.")
             
         # 추가로 부동산 통계 정보도 수집
         if address:
