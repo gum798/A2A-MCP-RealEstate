@@ -18,7 +18,7 @@ settings = get_settings()
 class AgentDiscovery:
     def __init__(self):
         self.discovered_agents: Dict[str, Dict] = {}
-        self.agent_card_path = Path(__file__).parent.parent.parent / "agent-card.json"
+        self.agent_card_path = Path(__file__).parent.parent.parent / "agent.json"
         
     async def load_agent_card(self) -> Dict:
         """로컬 에이전트 카드 로드"""

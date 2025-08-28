@@ -180,7 +180,7 @@ async def get_message_queue():
 
 
 # Agent Card 관련 엔드포인트
-@router.get("/.well-known/agent-card")
+@router.get("/.well-known/agent.json")
 async def get_agent_card():
     """Agent Card 조회 (Well-known 엔드포인트)"""
     from fastapi.responses import JSONResponse

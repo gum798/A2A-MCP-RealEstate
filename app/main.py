@@ -21,7 +21,7 @@ async def lifespan(app: FastAPI):
     logger.info(f"Agent ID: {settings.agent_id}")
     logger.info(f"Agent Name: {settings.agent_name}")
     logger.info(f"Port: {settings.port}")
-    logger.info(f"Agent Card URL: http://localhost:{settings.port}/api/agent/.well-known/agent-card")
+    logger.info(f"Agent Card URL: http://localhost:{settings.port}/api/agent/.well-known/agent.json")
     logger.info(f"Character Agents: http://localhost:{settings.port}/api/characters/characters")
     logger.info(f"Chat UI: http://localhost:{settings.port}/web/chat")
     yield
