@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime
 import os
 
-from app.routes import agent_routes, data_routes, ai_routes, mcp_routes, web_routes, review_routes, character_routes
+from app.routes import agent_routes, data_routes, ai_routes, mcp_routes, web_routes, review_routes, character_routes, collaboration_routes, conversation_routes, smart_chat_routes
 from app.utils.config import settings
 from app.utils.logger import logger
 from app.utils.fastmcp_client import cleanup_mcp_clients
@@ -78,6 +78,9 @@ async def log_requests(request, call_next):
 # 라우터 등록
 app.include_router(agent_routes.router, prefix="/api/agent", tags=["agent"])
 app.include_router(character_routes.router, prefix="/api/characters", tags=["characters"])
+app.include_router(collaboration_routes.router, prefix="/api/collaboration", tags=["collaboration"])
+app.include_router(conversation_routes.router, prefix="/api/conversations", tags=["conversations"])
+app.include_router(smart_chat_routes.router, prefix="/api/smart-chat", tags=["smart-chat"])
 app.include_router(data_routes.router, prefix="/api/data", tags=["data"])
 app.include_router(ai_routes.router, prefix="/api/ai", tags=["ai"])
 app.include_router(mcp_routes.router, tags=["mcp"])

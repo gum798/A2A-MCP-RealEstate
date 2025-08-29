@@ -1,0 +1,166 @@
+{
+  "registry_info": {
+    "name": "A2A Agent Registry",
+    "description": "Registry of available A2A (Application-to-Application) agents for collaboration",
+    "version": "1.0.0",
+    "last_updated": "2024-08-29T00:00:00Z",
+    "total_agents": 5
+  },
+  "agents": [
+    {
+      "agent_id": "socratic-web3-tutor",
+      "name": "Socratic Web3 AI Tutor",
+      "description": "Step-by-step guidance on Web3, AI, and blockchain topics using Socratic dialogue method",
+      "well_known_url": "https://socratic-web3-ai-tutor.vercel.app/api/a2a/.well-known/agent.json",
+      "base_url": "https://socratic-web3-ai-tutor.vercel.app/api/a2a",
+      "aliases": ["소크라테스", "socrates", "socratic", "웹3튜터", "web3튜터", "블록체인튜터"],
+      "keywords": [
+        "web3", "웹3", "blockchain", "블록체인", "cryptocurrency", "암호화폐",
+        "defi", "디파이", "smart contract", "스마트컨트랙트", "dapp", "디앱",
+        "ethereum", "이더리움", "bitcoin", "비트코인", "nft", "socratic", "소크라테스식"
+      ],
+      "capabilities": [
+        "socratic_dialogue",
+        "web3_education",
+        "blockchain_explanation",
+        "cryptocurrency_guidance",
+        "smart_contract_teaching"
+      ],
+      "specialty": "Web3 & Blockchain Education",
+      "language": ["Korean", "English"],
+      "personality_traits": ["philosophical", "questioning", "educational", "patient"],
+      "status": "active",
+      "trust_level": 9,
+      "popularity_score": 85
+    },
+    {
+      "agent_id": "job-search-agent",
+      "name": "Job Search AI Agent", 
+      "description": "Professional career guidance and job search assistance agent",
+      "well_known_url": "https://job-agent-113466776893.us-central1.run.app/.well-known/agent.json",
+      "base_url": "https://job-agent-113466776893.us-central1.run.app",
+      "aliases": ["잡서치", "job", "career", "취업상담사", "커리어상담", "구직상담"],
+      "keywords": [
+        "job", "career", "employment", "취업", "구직", "이력서", "resume",
+        "interview", "면접", "salary", "연봉", "skills", "스킬", "직무",
+        "company", "회사", "hiring", "채용"
+      ],
+      "capabilities": [
+        "job_search_assistance",
+        "resume_review",
+        "interview_preparation", 
+        "career_counseling",
+        "salary_negotiation"
+      ],
+      "specialty": "Career Development & Job Search",
+      "language": ["Korean", "English"],
+      "personality_traits": ["professional", "supportive", "knowledgeable", "motivating"],
+      "status": "active",
+      "trust_level": 8,
+      "popularity_score": 75
+    },
+    {
+      "agent_id": "document-generator",
+      "name": "Document Generator AI Agent",
+      "description": "Automated document generation and writing assistance agent",
+      "well_known_url": "https://agent-document-generator.vercel.app/.well-known/agent.json",
+      "base_url": "https://agent-document-generator.vercel.app",
+      "aliases": ["문서작성", "document", "writer", "글쓰기도우미", "문서생성기"],
+      "keywords": [
+        "document", "문서", "writing", "글쓰기", "report", "보고서",
+        "proposal", "제안서", "contract", "계약서", "letter", "편지",
+        "template", "템플릿", "format", "양식"
+      ],
+      "capabilities": [
+        "document_generation",
+        "writing_assistance",
+        "template_creation",
+        "content_structuring",
+        "style_formatting"
+      ],
+      "specialty": "Document Creation & Writing",
+      "language": ["Korean", "English"],
+      "personality_traits": ["efficient", "detailed", "creative", "organized"],
+      "status": "active",
+      "trust_level": 8,
+      "popularity_score": 70
+    },
+    {
+      "agent_id": "mlb-sports-agent",
+      "name": "MLB Sports Analytics Agent",
+      "description": "Baseball analytics and MLB statistics specialist agent",
+      "well_known_url": "https://a2a-mlb-agent.vercel.app/.well-known/agent.json",
+      "base_url": "https://a2a-mlb-agent.vercel.app",
+      "aliases": ["야구", "baseball", "mlb", "스포츠", "sports", "야구통계"],
+      "keywords": [
+        "baseball", "야구", "mlb", "statistics", "통계", "player", "선수",
+        "team", "팀", "game", "경기", "score", "점수", "batting", "타격",
+        "pitching", "투구", "analytics", "분석"
+      ],
+      "capabilities": [
+        "baseball_analytics",
+        "player_statistics",
+        "game_analysis", 
+        "team_performance",
+        "mlb_data_insights"
+      ],
+      "specialty": "Baseball Analytics & Sports Data",
+      "language": ["Korean", "English"],
+      "personality_traits": ["analytical", "sports-enthusiast", "data-driven", "competitive"],
+      "status": "active",
+      "trust_level": 7,
+      "popularity_score": 60
+    },
+    {
+      "agent_id": "web3-ai-lab",
+      "name": "Web3 AI Lab Agent",
+      "description": "Advanced Web3 and AI research laboratory agent for cutting-edge topics",
+      "well_known_url": "https://web3-ai-lab-season2-a2a.vercel.app/api/.well-known/agent-card.json",
+      "base_url": "https://web3-ai-lab-season2-a2a.vercel.app/api",
+      "aliases": ["web3lab", "ai연구소", "연구실", "lab", "웹3연구소"],
+      "keywords": [
+        "web3", "ai research", "artificial intelligence", "machine learning", "딥러닝",
+        "research", "연구", "laboratory", "실험", "innovation", "혁신",
+        "technology", "기술", "development", "개발"
+      ],
+      "capabilities": [
+        "ai_research",
+        "web3_innovation",
+        "technical_analysis",
+        "research_methodology",
+        "experimental_design"
+      ],
+      "specialty": "Web3 & AI Research",
+      "language": ["Korean", "English"],
+      "personality_traits": ["innovative", "research-focused", "technical", "experimental"],
+      "status": "active",
+      "trust_level": 8,
+      "popularity_score": 65
+    }
+  ],
+  "categories": {
+    "education": ["socratic-web3-tutor"],
+    "career": ["job-search-agent"],
+    "productivity": ["document-generator"],
+    "sports": ["mlb-sports-agent"],
+    "research": ["web3-ai-lab"]
+  },
+  "tags": {
+    "beginner_friendly": ["socratic-web3-tutor", "job-search-agent"],
+    "technical": ["web3-ai-lab", "mlb-sports-agent"],
+    "creative": ["document-generator"],
+    "analytical": ["mlb-sports-agent", "web3-ai-lab"],
+    "conversational": ["socratic-web3-tutor", "job-search-agent"]
+  },
+  "discovery_methods": [
+    "well_known_uri",
+    "manual_registration", 
+    "agent_recommendation",
+    "keyword_matching",
+    "category_browsing"
+  ],
+  "protocol_versions": {
+    "supported": ["0.3.0", "0.2.0"],
+    "default": "0.3.0"
+  }
+}

@@ -51,7 +51,7 @@ class AgentDiscovery:
     async def discover_agent_by_well_known(self, base_url: str) -> Optional[Dict]:
         """Well-known 엔드포인트를 통한 에이전트 디스커버리"""
         try:
-            well_known_url = f"{base_url.rstrip('/')}/.well-known/agent-card"
+            well_known_url = f"{base_url.rstrip('/')}/.well-known/agent.json"
             return await self.fetch_agent_card(well_known_url)
         except Exception as e:
             logger.warning(f"Well-known discovery failed for {base_url}: {e}")
