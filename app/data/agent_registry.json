@@ -3,8 +3,8 @@
     "name": "A2A Agent Registry",
     "description": "Registry of available A2A (Application-to-Application) agents for collaboration",
     "version": "1.0.0",
-    "last_updated": "2024-08-29T00:00:00Z",
-    "total_agents": 5
+    "last_updated": "2025-08-29T09:41:25.530005",
+    "total_agents": 8
   },
   "agents": [
     {
@@ -13,11 +13,34 @@
       "description": "Step-by-step guidance on Web3, AI, and blockchain topics using Socratic dialogue method",
       "well_known_url": "https://socratic-web3-ai-tutor.vercel.app/api/a2a/.well-known/agent.json",
       "base_url": "https://socratic-web3-ai-tutor.vercel.app/api/a2a",
-      "aliases": ["소크라테스", "socrates", "socratic", "웹3튜터", "web3튜터", "블록체인튜터"],
+      "aliases": [
+        "소크라테스",
+        "socrates",
+        "socratic",
+        "웹3튜터",
+        "web3튜터",
+        "블록체인튜터"
+      ],
       "keywords": [
-        "web3", "웹3", "blockchain", "블록체인", "cryptocurrency", "암호화폐",
-        "defi", "디파이", "smart contract", "스마트컨트랙트", "dapp", "디앱",
-        "ethereum", "이더리움", "bitcoin", "비트코인", "nft", "socratic", "소크라테스식"
+        "web3",
+        "웹3",
+        "blockchain",
+        "블록체인",
+        "cryptocurrency",
+        "암호화폐",
+        "defi",
+        "디파이",
+        "smart contract",
+        "스마트컨트랙트",
+        "dapp",
+        "디앱",
+        "ethereum",
+        "이더리움",
+        "bitcoin",
+        "비트코인",
+        "nft",
+        "socratic",
+        "소크라테스식"
       ],
       "capabilities": [
         "socratic_dialogue",
@@ -27,34 +50,72 @@
         "smart_contract_teaching"
       ],
       "specialty": "Web3 & Blockchain Education",
-      "language": ["Korean", "English"],
-      "personality_traits": ["philosophical", "questioning", "educational", "patient"],
+      "language": [
+        "Korean",
+        "English"
+      ],
+      "personality_traits": [
+        "philosophical",
+        "questioning",
+        "educational",
+        "patient"
+      ],
       "status": "active",
       "trust_level": 9,
       "popularity_score": 85
     },
     {
       "agent_id": "job-search-agent",
-      "name": "Job Search AI Agent", 
+      "name": "Job Search AI Agent",
       "description": "Professional career guidance and job search assistance agent",
       "well_known_url": "https://job-agent-113466776893.us-central1.run.app/.well-known/agent.json",
       "base_url": "https://job-agent-113466776893.us-central1.run.app",
-      "aliases": ["잡서치", "job", "career", "취업상담사", "커리어상담", "구직상담"],
+      "aliases": [
+        "잡서치",
+        "job",
+        "career",
+        "취업상담사",
+        "커리어상담",
+        "구직상담"
+      ],
       "keywords": [
-        "job", "career", "employment", "취업", "구직", "이력서", "resume",
-        "interview", "면접", "salary", "연봉", "skills", "스킬", "직무",
-        "company", "회사", "hiring", "채용"
+        "job",
+        "career",
+        "employment",
+        "취업",
+        "구직",
+        "이력서",
+        "resume",
+        "interview",
+        "면접",
+        "salary",
+        "연봉",
+        "skills",
+        "스킬",
+        "직무",
+        "company",
+        "회사",
+        "hiring",
+        "채용"
       ],
       "capabilities": [
         "job_search_assistance",
         "resume_review",
-        "interview_preparation", 
+        "interview_preparation",
         "career_counseling",
         "salary_negotiation"
       ],
       "specialty": "Career Development & Job Search",
-      "language": ["Korean", "English"],
-      "personality_traits": ["professional", "supportive", "knowledgeable", "motivating"],
+      "language": [
+        "Korean",
+        "English"
+      ],
+      "personality_traits": [
+        "professional",
+        "supportive",
+        "knowledgeable",
+        "motivating"
+      ],
       "status": "active",
       "trust_level": 8,
       "popularity_score": 75
@@ -65,11 +126,30 @@
       "description": "Automated document generation and writing assistance agent",
       "well_known_url": "https://agent-document-generator.vercel.app/.well-known/agent.json",
       "base_url": "https://agent-document-generator.vercel.app",
-      "aliases": ["문서작성", "document", "writer", "글쓰기도우미", "문서생성기"],
+      "aliases": [
+        "문서작성",
+        "document",
+        "writer",
+        "글쓰기도우미",
+        "문서생성기"
+      ],
       "keywords": [
-        "document", "문서", "writing", "글쓰기", "report", "보고서",
-        "proposal", "제안서", "contract", "계약서", "letter", "편지",
-        "template", "템플릿", "format", "양식"
+        "document",
+        "문서",
+        "writing",
+        "글쓰기",
+        "report",
+        "보고서",
+        "proposal",
+        "제안서",
+        "contract",
+        "계약서",
+        "letter",
+        "편지",
+        "template",
+        "템플릿",
+        "format",
+        "양식"
       ],
       "capabilities": [
         "document_generation",
@@ -79,8 +159,16 @@
         "style_formatting"
       ],
       "specialty": "Document Creation & Writing",
-      "language": ["Korean", "English"],
-      "personality_traits": ["efficient", "detailed", "creative", "organized"],
+      "language": [
+        "Korean",
+        "English"
+      ],
+      "personality_traits": [
+        "efficient",
+        "detailed",
+        "creative",
+        "organized"
+      ],
       "status": "active",
       "trust_level": 8,
       "popularity_score": 70
@@ -91,22 +179,53 @@
       "description": "Baseball analytics and MLB statistics specialist agent",
       "well_known_url": "https://a2a-mlb-agent.vercel.app/.well-known/agent.json",
       "base_url": "https://a2a-mlb-agent.vercel.app",
-      "aliases": ["야구", "baseball", "mlb", "스포츠", "sports", "야구통계"],
+      "aliases": [
+        "야구",
+        "baseball",
+        "mlb",
+        "스포츠",
+        "sports",
+        "야구통계"
+      ],
       "keywords": [
-        "baseball", "야구", "mlb", "statistics", "통계", "player", "선수",
-        "team", "팀", "game", "경기", "score", "점수", "batting", "타격",
-        "pitching", "투구", "analytics", "분석"
+        "baseball",
+        "야구",
+        "mlb",
+        "statistics",
+        "통계",
+        "player",
+        "선수",
+        "team",
+        "팀",
+        "game",
+        "경기",
+        "score",
+        "점수",
+        "batting",
+        "타격",
+        "pitching",
+        "투구",
+        "analytics",
+        "분석"
       ],
       "capabilities": [
         "baseball_analytics",
         "player_statistics",
-        "game_analysis", 
+        "game_analysis",
         "team_performance",
         "mlb_data_insights"
       ],
       "specialty": "Baseball Analytics & Sports Data",
-      "language": ["Korean", "English"],
-      "personality_traits": ["analytical", "sports-enthusiast", "data-driven", "competitive"],
+      "language": [
+        "Korean",
+        "English"
+      ],
+      "personality_traits": [
+        "analytical",
+        "sports-enthusiast",
+        "data-driven",
+        "competitive"
+      ],
       "status": "active",
       "trust_level": 7,
       "popularity_score": 60
@@ -117,11 +236,29 @@
       "description": "Advanced Web3 and AI research laboratory agent for cutting-edge topics",
       "well_known_url": "https://web3-ai-lab-season2-a2a.vercel.app/api/.well-known/agent-card.json",
       "base_url": "https://web3-ai-lab-season2-a2a.vercel.app/api",
-      "aliases": ["web3lab", "ai연구소", "연구실", "lab", "웹3연구소"],
+      "aliases": [
+        "web3lab",
+        "ai연구소",
+        "연구실",
+        "lab",
+        "웹3연구소"
+      ],
       "keywords": [
-        "web3", "ai research", "artificial intelligence", "machine learning", "딥러닝",
-        "research", "연구", "laboratory", "실험", "innovation", "혁신",
-        "technology", "기술", "development", "개발"
+        "web3",
+        "ai research",
+        "artificial intelligence",
+        "machine learning",
+        "딥러닝",
+        "research",
+        "연구",
+        "laboratory",
+        "실험",
+        "innovation",
+        "혁신",
+        "technology",
+        "기술",
+        "development",
+        "개발"
       ],
       "capabilities": [
         "ai_research",
@@ -131,36 +268,186 @@
         "experimental_design"
       ],
       "specialty": "Web3 & AI Research",
-      "language": ["Korean", "English"],
-      "personality_traits": ["innovative", "research-focused", "technical", "experimental"],
+      "language": [
+        "Korean",
+        "English"
+      ],
+      "personality_traits": [
+        "innovative",
+        "research-focused",
+        "technical",
+        "experimental"
+      ],
       "status": "active",
       "trust_level": 8,
       "popularity_score": 65
+    },
+    {
+      "agent_id": "a2a-mcp-realestate",
+      "name": "A2A MCP Real Estate Agent",
+      "description": "부동산 분석 및 추천 서비스를 제공하는 A2A Agent. 투자가치와 삶의질 평가를 통해 맞춤형 부동산 추천",
+      "well_known_url": "https://a2a-mcp-realestate.onrender.com/api/agent/.well-known/agent.json",
+      "base_url": "https://a2a-mcp-realestate.onrender.com/api/agent",
+      "aliases": [
+        "부동산",
+        "realestate",
+        "부동산분석",
+        "투자분석",
+        "부동산추천",
+        "집찾기",
+        "매물추천"
+      ],
+      "keywords": [
+        "realestate",
+        "부동산",
+        "property",
+        "매물",
+        "investment",
+        "투자",
+        "analysis",
+        "분석",
+        "recommendation",
+        "추천",
+        "apartment",
+        "아파트",
+        "house",
+        "집",
+        "price",
+        "가격",
+        "location",
+        "위치",
+        "quality of life",
+        "삶의질",
+        "market trend",
+        "시장동향"
+      ],
+      "capabilities": [
+        "real_estate_analysis",
+        "investment_value_evaluation",
+        "quality_of_life_assessment",
+        "location_based_search",
+        "price_trend_analysis",
+        "personalized_recommendation",
+        "market_data_analysis"
+      ],
+      "specialty": "Real Estate Analysis & Investment Advisory",
+      "language": [
+        "Korean",
+        "English"
+      ],
+      "personality_traits": [
+        "analytical",
+        "data-driven",
+        "advisory",
+        "detail-oriented"
+      ],
+      "status": "active",
+      "trust_level": 9,
+      "popularity_score": 80
+    },
+    {
+      "agent_id": "agent-6717",
+      "name": "Socrates Web3 AI Tutor",
+      "description": "Web3, AI, 블록체인 등 다양한 주제에 대해 소크라테스식 문답법으로 대화하며, Gemini 모델을 활용해 심층적이고 친절하게 설명해주는 AI 에이전트입니다. 대화의 맥락을 기억하며, 사용자의 질문에 맞춰 단계별로 사고를 유도하고, 개념을 쉽게 풀어서 안내합니다. (초기 안내 메시지는 public/prompt.txt에서 불러옵니다)",
+      "well_known_url": "https://socratic-web3-ai-tutor.vercel.app/api/a2a/.well-known/agent.json",
+      "base_url": "https://socratic-web3-ai-tutor.vercel.app/api/a2a",
+      "aliases": [
+        "socrates web3 ai tutor"
+      ],
+      "keywords": [],
+      "capabilities": [],
+      "specialty": "Web3, AI, 블록체인 등 다양한 주제에 대해 소크라테스식 문답법으로 대화하며, Gem",
+      "language": [
+        "English"
+      ],
+      "personality_traits": [],
+      "status": "active",
+      "trust_level": 5,
+      "popularity_score": 50
+    },
+    {
+      "agent_id": "agent-7771",
+      "name": "Socrates Web3 AI Tutor",
+      "description": "Web3, AI, 블록체인 등 다양한 주제에 대해 소크라테스식 문답법으로 대화하며, Gemini 모델을 활용해 심층적이고 친절하게 설명해주는 AI 에이전트입니다. 대화의 맥락을 기억하며, 사용자의 질문에 맞춰 단계별로 사고를 유도하고, 개념을 쉽게 풀어서 안내합니다. (초기 안내 메시지는 public/prompt.txt에서 불러옵니다)",
+      "well_known_url": "https://socratic-web3-ai-tutor.vercel.app/api/a2a/.well-known/agent.json",
+      "base_url": "https://socratic-web3-ai-tutor.vercel.app/api/a2a",
+      "aliases": [
+        "socrates web3 ai tutor"
+      ],
+      "keywords": [],
+      "capabilities": [],
+      "specialty": "Web3, AI, 블록체인 등 다양한 주제에 대해 소크라테스식 문답법으로 대화하며, Gem",
+      "language": [
+        "English"
+      ],
+      "personality_traits": [],
+      "status": "active",
+      "trust_level": 5,
+      "popularity_score": 50
     }
   ],
   "categories": {
-    "education": ["socratic-web3-tutor"],
-    "career": ["job-search-agent"],
-    "productivity": ["document-generator"],
-    "sports": ["mlb-sports-agent"],
-    "research": ["web3-ai-lab"]
+    "education": [
+      "socratic-web3-tutor"
+    ],
+    "career": [
+      "job-search-agent"
+    ],
+    "productivity": [
+      "document-generator"
+    ],
+    "sports": [
+      "mlb-sports-agent"
+    ],
+    "research": [
+      "web3-ai-lab"
+    ],
+    "real_estate": [
+      "a2a-mcp-realestate"
+    ]
   },
   "tags": {
-    "beginner_friendly": ["socratic-web3-tutor", "job-search-agent"],
-    "technical": ["web3-ai-lab", "mlb-sports-agent"],
-    "creative": ["document-generator"],
-    "analytical": ["mlb-sports-agent", "web3-ai-lab"],
-    "conversational": ["socratic-web3-tutor", "job-search-agent"]
+    "beginner_friendly": [
+      "socratic-web3-tutor",
+      "job-search-agent"
+    ],
+    "technical": [
+      "web3-ai-lab",
+      "mlb-sports-agent",
+      "a2a-mcp-realestate"
+    ],
+    "creative": [
+      "document-generator"
+    ],
+    "analytical": [
+      "mlb-sports-agent",
+      "web3-ai-lab",
+      "a2a-mcp-realestate"
+    ],
+    "conversational": [
+      "socratic-web3-tutor",
+      "job-search-agent"
+    ],
+    "data_driven": [
+      "a2a-mcp-realestate",
+      "mlb-sports-agent"
+    ],
+    "investment_focused": [
+      "a2a-mcp-realestate"
+    ]
   },
   "discovery_methods": [
     "well_known_uri",
-    "manual_registration", 
+    "manual_registration",
     "agent_recommendation",
     "keyword_matching",
     "category_browsing"
   ],
   "protocol_versions": {
-    "supported": ["0.3.0", "0.2.0"],
+    "supported": [
+      "0.3.0",
+      "0.2.0"
+    ],
     "default": "0.3.0"
   }
 }

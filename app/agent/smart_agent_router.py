@@ -13,6 +13,7 @@ from loguru import logger
 
 from .multi_agent_conversation import MultiAgentConversation, ConversationMessage
 from .a2a_agent import A2AAgent
+from .agent_registry import agent_registry, RegistryAgent
 
 
 class AgentProfile(BaseModel):
@@ -66,26 +67,24 @@ class SmartAgentRouter:
         ]
     
     def _initialize_agent_profiles(self) -> Dict[str, AgentProfile]:
-        """에이전트 프로필 초기화"""
+        """에이전트 프로필 초기화 (레지스트리에서 로드)"""
         profiles = {}
         
-        # Socratic Web3 AI Tutor
-        socratic_profile = AgentProfile(
-            agent_id="socratic-web3-tutor",
-            name="Socratic Web3 AI Tutor",
-            aliases=["소크라테스", "socrates", "socratic", "웹3튜터", "web3튜터"],
-            keywords=[
-                "web3", "웹3", "blockchain", "블록체인", "cryptocurrency", "암호화폐", 
-                "defi", "디파이", "smart contract", "스마트컨트랙트", "dapp", "디앱",
-                "ethereum", "이더리움", "bitcoin", "비트코인", "nft", "소크라테스식"
-            ],
-            description="Web3, AI, blockchain 주제에 대한 소크라테스식 대화 전문 튜터",
-            url="https://socratic-web3-ai-tutor.vercel.app/api/a2a",
-            capabilities=["socratic_dialogue", "web3_education", "blockchain_explanation"],
-            personality_traits=["philosophical", "questioning", "educational", "patient"]
-        )
-        profiles[socratic_profile.agent_id] = socratic_profile
+        # 레지스트리에서 모든 활성 에이전트 로드
+        for registry_agent in agent_registry.get_all_agents(active_only=True):
+            profile = AgentProfile(
+                agent_id=registry_agent.agent_id,
+                name=registry_agent.name,
+                aliases=registry_agent.aliases,
+                keywords=registry_agent.keywords,
+                description=registry_agent.description,
+                url=registry_agent.base_url,
+                capabilities=registry_agent.capabilities,
+                personality_traits=registry_agent.personality_traits
+            )
+            profiles[profile.agent_id] = profile
         
+        logger.info(f"Initialized {len(profiles)} agent profiles from registry")
         return profiles
     
     async def process_message(self, user_message: str) -> Tuple[bool, Optional[str], Optional[str]]:
@@ -101,10 +100,12 @@ class SmartAgentRouter:
         if switch_result[0]:
             return switch_result
         
-        # 2. 키워드 기반 에이전트 추천
-        recommendation = self._recommend_agent_by_keywords(user_message)
-        if recommendation:
-            return False, recommendation, f"이 주제는 {self.agent_profiles[recommendation].name}이 전문이에요. 전환할까요?"
+        # 2. 레지스트리 기반 에이전트 추천
+        recommended_agents = agent_registry.get_recommended_agents(user_message, limit=1)
+        if recommended_agents:
+            best_agent = recommended_agents[0]
+            if best_agent.agent_id in self.agent_profiles:
+                return False, best_agent.agent_id, f"이 주제는 {best_agent.name}이 전문이에요. 전환할까요?"
         
         # 3. 기본적으로 전환 없음
         return False, None, None
@@ -129,16 +130,20 @@ class SmartAgentRouter:
         return False, None, None
     
     def _identify_target_agent(self, message: str) -> Optional[str]:
-        """메시지에서 대상 에이전트 식별"""
+        """메시지에서 대상 에이전트 식별 (레지스트리 사용)"""
         message_lower = message.lower()
         
+        # 레지스트리에서 별명으로 검색
+        for word in message_lower.split():
+            agent = agent_registry.get_agent_by_alias(word)
+            if agent and agent.agent_id in self.agent_profiles:
+                return agent.agent_id
+        
+        # 기존 프로필에서도 검색 (백업)
         for agent_id, profile in self.agent_profiles.items():
-            # 별명 확인
             for alias in profile.aliases:
                 if alias.lower() in message_lower:
                     return agent_id
-            
-            # 에이전트 이름 확인
             if profile.name.lower() in message_lower:
                 return agent_id
         

@@ -2,7 +2,7 @@
   "name": "A2A Real Estate Agent",
   "description": "부동산 분석 및 추천 서비스를 제공하는 A2A Agent. 투자가치와 삶의질 평가를 통해 맞춤형 부동산 추천",
   "version": "1.0.0",
-  "url": "http://localhost:8000",
+  "url": "http://localhost:28000",
   "provider": {
     "name": "A2A Agent System",
     "contact": "agent-py-001@a2a.local"
@@ -10,10 +10,12 @@
   "capabilities": {
     "primary_functions": [
       "real_estate_analysis",
-      "investment_value_evaluation", 
+      "investment_value_evaluation",
       "quality_of_life_assessment",
       "location_based_search",
-      "price_trend_analysis"
+      "price_trend_analysis",
+      "personalized_recommendation",
+      "market_data_analysis"
     ],
     "communication_protocols": [
       "HTTP/HTTPS",
@@ -52,7 +54,7 @@
       "required": ["message_type", "agent_id"]
     },
     "output": {
-      "type": "object", 
+      "type": "object",
       "properties": {
         "status": {
           "type": "string",
@@ -86,9 +88,16 @@
     "manual_configuration"
   ],
   "metadata": {
-    "created_at": "2025-08-21T00:00:00Z",
-    "updated_at": "2025-08-21T00:00:00Z",
-    "tags": ["real_estate", "analysis", "recommendation", "korean"],
-    "language_support": ["ko", "en"]
+    "created_at": "2025-08-29T00:00:00Z",
+    "updated_at": "2025-08-29T09:25:00Z",
+    "tags": ["real_estate", "analysis", "recommendation", "korean", "investment", "property"],
+    "language_support": ["ko", "en"],
+    "specialties": [
+      "부동산 투자 분석",
+      "매물 추천",
+      "위치 기반 검색",
+      "삶의질 평가",
+      "시장 동향 분석"
+    ]
   }
 }
