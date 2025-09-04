@@ -275,6 +275,65 @@ class AgentRegistry:
         agents.sort(key=lambda x: (x.trust_level, x.popularity_score), reverse=True)
         return agents
     
+    def find_duplicate_agents(self) -> Dict[str, List[str]]:
+        """중복 에이전트 찾기 (같은 base_url 또는 well_known_url을 가진 에이전트들)"""
+        duplicates = {}
+        url_to_agents = {}
+        
+        # URL 기준으로 에이전트 그룹화
+        for agent_id, agent in self.agents.items():
+            key = agent.base_url or agent.well_known_url
+            if key not in url_to_agents:
+                url_to_agents[key] = []
+            url_to_agents[key].append(agent_id)
+        
+        # 중복 찾기
+        for url, agent_ids in url_to_agents.items():
+            if len(agent_ids) > 1:
+                duplicates[url] = agent_ids
+        
+        return duplicates
+    
+    def remove_duplicate_agents(self, keep_strategy: str = "highest_score") -> int:
+        """
+        중복 에이전트 제거
+        keep_strategy: 'highest_score', 'first', 'last', 'most_complete'
+        """
+        duplicates = self.find_duplicate_agents()
+        removed_count = 0
+        
+        for url, agent_ids in duplicates.items():
+            if len(agent_ids) <= 1:
+                continue
+            
+            agents = [self.agents[aid] for aid in agent_ids]
+            
+            if keep_strategy == "highest_score":
+                # 신뢰도와 인기도가 가장 높은 것 유지
+                keep_agent = max(agents, key=lambda x: (x.trust_level, x.popularity_score))
+            elif keep_strategy == "first":
+                keep_agent = agents[0]
+            elif keep_strategy == "last":  
+                keep_agent = agents[-1]
+            elif keep_strategy == "most_complete":
+                # 정보가 가장 완전한 것 유지 (키워드, 별명, 능력 개수)
+                keep_agent = max(agents, key=lambda x: len(x.keywords) + len(x.aliases) + len(x.capabilities))
+            else:
+                keep_agent = agents[0]
+            
+            # 유지할 에이전트 외의 나머지 제거
+            for agent in agents:
+                if agent.agent_id != keep_agent.agent_id:
+                    self.remove_agent(agent.agent_id)
+                    removed_count += 1
+                    logger.info(f"Removed duplicate agent: {agent.name} ({agent.agent_id})")
+        
+        if removed_count > 0:
+            self._save_registry()
+            logger.info(f"Removed {removed_count} duplicate agents")
+        
+        return removed_count
+    
     def get_categories(self) -> Dict[str, List[str]]:
         """카테고리 목록"""
         return self.categories.copy()

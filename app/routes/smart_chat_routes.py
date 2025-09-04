@@ -64,8 +64,8 @@ async def smart_chat(chat_request: ChatMessage):
                     "session_id": switch_result["session_id"]
                 })
                 
-                # 응답 기다리기
-                agent_response = await smart_router.get_latest_response(timeout_seconds=15)
+                # 응답 기다리기 (타임아웃 늘림)
+                agent_response = await smart_router.get_latest_response(timeout_seconds=35)
                 if agent_response:
                     response_data["agent_response"] = {
                         "sender": agent_response.sender_name,
@@ -94,7 +94,7 @@ async def smart_chat(chat_request: ChatMessage):
                 response_data["session_id"] = send_result["session_id"]
                 
                 # 에이전트 응답 기다리기
-                agent_response = await smart_router.get_latest_response(timeout_seconds=15)
+                agent_response = await smart_router.get_latest_response(timeout_seconds=35)
                 if agent_response:
                     response_data["agent_response"] = {
                         "sender": agent_response.sender_name,

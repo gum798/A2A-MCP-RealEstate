@@ -35,6 +35,10 @@ class AgentUpdateRequest(BaseModel):
     trust_level: Optional[int] = None
 
 
+class DuplicateRemovalRequest(BaseModel):
+    keep_strategy: str = "highest_score"  # 'highest_score', 'first', 'last', 'most_complete'
+
+
 @router.get("/agents")
 async def list_all_agents(
     active_only: bool = Query(True, description="활성 에이전트만 조회"),
@@ -411,4 +415,75 @@ async def get_agent_recommendations(message: str, limit: int = Query(3, descript
         
     except Exception as e:
         logger.error(f"Failed to get agent recommendations: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/duplicates")
+async def find_duplicate_agents():
+    """중복 에이전트 찾기"""
+    try:
+        duplicates = agent_registry.find_duplicate_agents()
+        
+        duplicate_info = {}
+        for url, agent_ids in duplicates.items():
+            agents = [agent_registry.get_agent_by_id(aid) for aid in agent_ids]
+            duplicate_info[url] = [
+                {
+                    "agent_id": agent.agent_id,
+                    "name": agent.name,
+                    "trust_level": agent.trust_level,
+                    "popularity_score": agent.popularity_score,
+                    "keywords_count": len(agent.keywords),
+                    "aliases_count": len(agent.aliases),
+                    "capabilities_count": len(agent.capabilities),
+                    "status": agent.status
+                }
+                for agent in agents if agent
+            ]
+        
+        return {
+            "success": True,
+            "total_duplicate_groups": len(duplicates),
+            "duplicates": duplicate_info,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to find duplicates: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/duplicates/remove")
+async def remove_duplicate_agents(request: DuplicateRemovalRequest):
+    """중복 에이전트 제거"""
+    try:
+        # 제거 전 중복 에이전트 확인
+        duplicates_before = agent_registry.find_duplicate_agents()
+        
+        if not duplicates_before:
+            return {
+                "success": True,
+                "message": "No duplicate agents found",
+                "removed_count": 0,
+                "timestamp": datetime.now().isoformat()
+            }
+        
+        # 중복 제거 실행
+        removed_count = agent_registry.remove_duplicate_agents(request.keep_strategy)
+        
+        # 제거 후 상태 확인
+        duplicates_after = agent_registry.find_duplicate_agents()
+        
+        return {
+            "success": True,
+            "message": f"Removed {removed_count} duplicate agents using '{request.keep_strategy}' strategy",
+            "removed_count": removed_count,
+            "keep_strategy": request.keep_strategy,
+            "duplicates_before": len(duplicates_before),
+            "duplicates_after": len(duplicates_after),
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to remove duplicates: {e}")
         raise HTTPException(status_code=500, detail=str(e))

@@ -62,6 +62,42 @@ class SmartAgentRouter:
             r"(.*)(웹3|web3|블록체인|blockchain)(.*)질문",
             r"(.*)(ai|인공지능)(.*)배우고?\s*싶",
             
+            # 부동산 관련 전환
+            r"(.*)(부동산|real\s*estate)(.*)도움",
+            r"(.*)(부동산|real\s*estate)(.*)상담",
+            r"(.*)(부동산|real\s*estate)(.*)투자",
+            r"(.*)(부동산|real\s*estate)(.*)분석",
+            r"(.*)(부동산|real\s*estate)(.*)추천",
+            r"(.*)(집|아파트|매물)(.*)찾",
+            r"(.*)(투자|매매)(.*)상담",
+            
+            # 취업/커리어 관련 전환
+            r"(.*)(취업|job|career)(.*)도움",
+            r"(.*)(취업|job|career)(.*)준비",
+            r"(.*)(취업|job|career)(.*)상담",
+            r"(.*)(이력서|resume)(.*)도움",
+            r"(.*)(면접|interview)(.*)준비",
+            r"(.*)(구직|job\s*search)(.*)도움",
+            
+            # 문서 작성 관련 전환
+            r"(.*)(문서|document)(.*)작성",
+            r"(.*)(문서|document)(.*)도움",
+            r"(.*)(보고서|report)(.*)작성",
+            r"(.*)(글쓰기|writing)(.*)도움",
+            r"(.*)(제안서|proposal)(.*)작성",
+            
+            # 스포츠/야구 관련 전환
+            r"(.*)(야구|baseball|mlb)(.*)분석",
+            r"(.*)(야구|baseball|mlb)(.*)통계",
+            r"(.*)(야구|baseball|mlb)(.*)정보",
+            r"(.*)(스포츠|sports)(.*)분석",
+            
+            # 연구/실험 관련 전환  
+            r"(.*)(연구|research)(.*)도움",
+            r"(.*)(ai|인공지능)(.*)연구",
+            r"(.*)(실험|experiment)(.*)설계",
+            r"(.*)(lab|연구소|연구실)(.*)질문",
+            
             # 튜터/선생님 요청
             r"(.*)선생님(.*)바꿔",
             r"(.*)튜터(.*)바꿔",
@@ -134,6 +170,18 @@ class SmartAgentRouter:
     def _identify_target_agent(self, message: str) -> Optional[str]:
         """메시지에서 대상 에이전트 식별 (레지스트리 사용)"""
         message_lower = message.lower()
+        
+        # 주제별 키워드 매칭 (우선순위)
+        if any(keyword in message_lower for keyword in ['부동산', 'real estate', '집', '아파트', '매물']):
+            return "a2a-mcp-realestate"
+        if any(keyword in message_lower for keyword in ['취업', 'job', 'career', '이력서', 'resume', '면접', 'interview', '구직']):
+            return "job-search-agent"
+        if any(keyword in message_lower for keyword in ['문서', 'document', '보고서', 'report', '글쓰기', 'writing', '제안서', 'proposal']):
+            return "document-generator"
+        if any(keyword in message_lower for keyword in ['야구', 'baseball', 'mlb', '스포츠', 'sports']):
+            return "mlb-sports-agent"
+        if any(keyword in message_lower for keyword in ['연구', 'research', 'lab', '연구소', '연구실', '실험', 'experiment']):
+            return "web3-ai-lab"
         
         # 레지스트리에서 별명으로 검색
         for word in message_lower.split():

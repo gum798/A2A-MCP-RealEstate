@@ -3,8 +3,8 @@
     "name": "A2A Agent Registry",
     "description": "Registry of available A2A (Application-to-Application) agents for collaboration",
     "version": "1.0.0",
-    "last_updated": "2025-08-29T09:41:25.530005",
-    "total_agents": 8
+    "last_updated": "2025-09-04T15:30:00.000000",
+    "total_agents": 6
   },
   "agents": [
     {
@@ -344,46 +344,6 @@
       "status": "active",
       "trust_level": 9,
       "popularity_score": 80
-    },
-    {
-      "agent_id": "agent-6717",
-      "name": "Socrates Web3 AI Tutor",
-      "description": "Web3, AI, 블록체인 등 다양한 주제에 대해 소크라테스식 문답법으로 대화하며, Gemini 모델을 활용해 심층적이고 친절하게 설명해주는 AI 에이전트입니다. 대화의 맥락을 기억하며, 사용자의 질문에 맞춰 단계별로 사고를 유도하고, 개념을 쉽게 풀어서 안내합니다. (초기 안내 메시지는 public/prompt.txt에서 불러옵니다)",
-      "well_known_url": "https://socratic-web3-ai-tutor.vercel.app/api/a2a/.well-known/agent.json",
-      "base_url": "https://socratic-web3-ai-tutor.vercel.app/api/a2a",
-      "aliases": [
-        "socrates web3 ai tutor"
-      ],
-      "keywords": [],
-      "capabilities": [],
-      "specialty": "Web3, AI, 블록체인 등 다양한 주제에 대해 소크라테스식 문답법으로 대화하며, Gem",
-      "language": [
-        "English"
-      ],
-      "personality_traits": [],
-      "status": "active",
-      "trust_level": 5,
-      "popularity_score": 50
-    },
-    {
-      "agent_id": "agent-7771",
-      "name": "Socrates Web3 AI Tutor",
-      "description": "Web3, AI, 블록체인 등 다양한 주제에 대해 소크라테스식 문답법으로 대화하며, Gemini 모델을 활용해 심층적이고 친절하게 설명해주는 AI 에이전트입니다. 대화의 맥락을 기억하며, 사용자의 질문에 맞춰 단계별로 사고를 유도하고, 개념을 쉽게 풀어서 안내합니다. (초기 안내 메시지는 public/prompt.txt에서 불러옵니다)",
-      "well_known_url": "https://socratic-web3-ai-tutor.vercel.app/api/a2a/.well-known/agent.json",
-      "base_url": "https://socratic-web3-ai-tutor.vercel.app/api/a2a",
-      "aliases": [
-        "socrates web3 ai tutor"
-      ],
-      "keywords": [],
-      "capabilities": [],
-      "specialty": "Web3, AI, 블록체인 등 다양한 주제에 대해 소크라테스식 문답법으로 대화하며, Gem",
-      "language": [
-        "English"
-      ],
-      "personality_traits": [],
-      "status": "active",
-      "trust_level": 5,
-      "popularity_score": 50
     }
   ],
   "categories": {
