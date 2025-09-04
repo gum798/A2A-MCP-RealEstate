@@ -73,6 +73,12 @@ async def chat_page(request: Request):
     """투심이와 삼돌이 채팅 페이지"""
     return templates.TemplateResponse("chat.html", {"request": request})
 
+# A2A 에이전트 채팅 페이지
+@router.get("/agent-chat", response_class=HTMLResponse)
+async def agent_chat_page(request: Request):
+    """A2A 다중 에이전트 채팅 페이지"""
+    return templates.TemplateResponse("agent_chat.html", {"request": request})
+
 # 지도 페이지
 @router.get("/map", response_class=HTMLResponse)
 async def map_view_page(request: Request):

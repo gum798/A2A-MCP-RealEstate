@@ -2,7 +2,7 @@
   "name": "A2A Real Estate Agent",
   "description": "부동산 분석 및 추천 서비스를 제공하는 A2A Agent. 투자가치와 삶의질 평가를 통해 맞춤형 부동산 추천",
   "version": "1.0.0",
-  "url": "http://localhost:28000",
+  "url": "http://a2a-mcp-realestate.onrender.com",
   "provider": {
     "name": "A2A Agent System",
     "contact": "agent-py-001@a2a.local"
@@ -40,7 +40,12 @@
       "properties": {
         "message_type": {
           "type": "string",
-          "enum": ["ping", "data_request", "analysis_request", "rpc_call"]
+          "enum": [
+            "ping",
+            "data_request",
+            "analysis_request",
+            "rpc_call"
+          ]
         },
         "data": {
           "type": "object",
@@ -51,14 +56,21 @@
           "description": "Requesting agent identifier"
         }
       },
-      "required": ["message_type", "agent_id"]
+      "required": [
+        "message_type",
+        "agent_id"
+      ]
     },
     "output": {
       "type": "object",
       "properties": {
         "status": {
           "type": "string",
-          "enum": ["success", "error", "processing"]
+          "enum": [
+            "success",
+            "error",
+            "processing"
+          ]
         },
         "data": {
           "type": "object",
@@ -72,7 +84,10 @@
     }
   },
   "authentication": {
-    "methods": ["api_key", "jwt"],
+    "methods": [
+      "api_key",
+      "jwt"
+    ],
     "required": false
   },
   "features": {
@@ -90,8 +105,18 @@
   "metadata": {
     "created_at": "2025-08-29T00:00:00Z",
     "updated_at": "2025-08-29T09:25:00Z",
-    "tags": ["real_estate", "analysis", "recommendation", "korean", "investment", "property"],
-    "language_support": ["ko", "en"],
+    "tags": [
+      "real_estate",
+      "analysis",
+      "recommendation",
+      "korean",
+      "investment",
+      "property"
+    ],
+    "language_support": [
+      "ko",
+      "en"
+    ],
     "specialties": [
       "부동산 투자 분석",
       "매물 추천",

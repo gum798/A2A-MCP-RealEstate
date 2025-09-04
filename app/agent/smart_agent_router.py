@@ -14,6 +14,7 @@ from loguru import logger
 from .multi_agent_conversation import MultiAgentConversation, ConversationMessage
 from .a2a_agent import A2AAgent
 from .agent_registry import agent_registry, RegistryAgent
+from .external_agent_adapter import external_agent_manager
 
 
 class AgentProfile(BaseModel):
@@ -35,6 +36,7 @@ class SmartAgentRouter:
         self.conversation_manager = conversation_manager
         self.current_session_id: Optional[str] = None
         self.current_agent_id: Optional[str] = None
+        self.latest_response: Optional[ConversationMessage] = None
         
         # 미리 정의된 에이전트 프로필들
         self.agent_profiles: Dict[str, AgentProfile] = self._initialize_agent_profiles()
@@ -180,27 +182,47 @@ class SmartAgentRouter:
             
             profile = self.agent_profiles[agent_id]
             
-            # 2. 에이전트 발견 및 연결
-            agent = await self.conversation_manager.discover_and_add_agent(profile.url)
-            if not agent:
-                return {"success": False, "error": f"Failed to connect to {profile.name}"}
+            # 2. 외부 에이전트 어댑터를 사용해서 연결
+            logger.info(f"Attempting to connect to external agent: {profile.name}")
             
-            # 3. 새 대화 세션 시작
-            session_id = await self.conversation_manager.start_conversation(
-                f"{profile.name}와의 대화",
-                [agent_id]
-            )
+            # 에이전트 정보 조회
+            registry_agent = agent_registry.get_agent_by_id(agent_id)
+            if not registry_agent:
+                return {"success": False, "error": f"Agent {agent_id} not found in registry"}
+            
+            agent_info = {
+                "name": registry_agent.name,
+                "description": registry_agent.description,
+                "agent_id": agent_id
+            }
+            
+            # 3. 세션 생성 (간단한 UUID 형태)
+            import uuid
+            session_id = f"session_{agent_id}_{uuid.uuid4().hex[:8]}"
             
             self.current_session_id = session_id
             self.current_agent_id = agent_id
             
-            # 4. 초기 메시지가 있다면 전송
+            # 4. 초기 메시지가 있다면 외부 에이전트에게 전송
             if initial_message:
-                await self.conversation_manager.send_message(
-                    session_id,
-                    initial_message,
-                    agent_id
+                response = await external_agent_manager.send_message(
+                    agent_id, 
+                    registry_agent.base_url, 
+                    agent_info, 
+                    initial_message
                 )
+                
+                # 응답을 대화 히스토리에 저장
+                if response.get("success"):
+                    self.latest_response = ConversationMessage(
+                        message_id=f"msg_{uuid.uuid4().hex[:8]}",
+                        conversation_id=session_id,
+                        sender_id=agent_id,
+                        sender_name=response.get("sender", profile.name),
+                        content=response.get("content", ""),
+                        timestamp=datetime.now()
+                    )
+                    logger.info(f"Received response from {agent_id}")
             
             return {
                 "success": True,
@@ -220,16 +242,41 @@ class SmartAgentRouter:
             return {"success": False, "error": "No active agent session"}
         
         try:
-            sent_message = await self.conversation_manager.send_message(
-                self.current_session_id,
-                message,
-                self.current_agent_id
+            # 레지스트리에서 에이전트 정보 조회
+            registry_agent = agent_registry.get_agent_by_id(self.current_agent_id)
+            if not registry_agent:
+                return {"success": False, "error": f"Agent {self.current_agent_id} not found in registry"}
+            
+            agent_info = {
+                "name": registry_agent.name,
+                "description": registry_agent.description,
+                "agent_id": self.current_agent_id
+            }
+            
+            # 외부 에이전트에게 메시지 전송
+            response = await external_agent_manager.send_message(
+                self.current_agent_id,
+                registry_agent.base_url,
+                agent_info,
+                message
             )
             
+            # 응답을 대화 히스토리에 저장
+            if response.get("success"):
+                import uuid
+                self.latest_response = ConversationMessage(
+                    message_id=f"msg_{uuid.uuid4().hex[:8]}",
+                    conversation_id=self.current_session_id,
+                    sender_id=self.current_agent_id,
+                    sender_name=response.get("sender", registry_agent.name),
+                    content=response.get("content", ""),
+                    timestamp=datetime.now()
+                )
+            
             return {
-                "success": True,
-                "message_id": sent_message.message_id,
-                "session_id": self.current_session_id
+                "success": response.get("success", False),
+                "session_id": self.current_session_id,
+                "response": response
             }
             
         except Exception as e:
