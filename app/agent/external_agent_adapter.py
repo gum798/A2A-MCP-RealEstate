@@ -207,19 +207,38 @@ class RealEstateAgentAdapter(BaseAgentAdapter):
         """부동산 에이전트에게 메시지 전송"""
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
-                endpoint = f"{self.base_url}/api/chat"
+                # A2A 프로토콜 메시지 구성
+                a2a_message = {
+                    "id": f"msg_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                    "source_agent_id": "agent-py-001", 
+                    "target_agent_id": "a2a-mcp-realestate",
+                    "message_type": "conversation",
+                    "payload": {
+                        "content": message,
+                        "sender_name": "User"
+                    },
+                    "timestamp": datetime.now().isoformat()
+                }
+                
+                endpoint = f"{self.base_url}/api/agent/message"
                 
                 response = await client.post(
                     endpoint,
-                    json={"message": message},
+                    json=a2a_message,
                     headers={"Content-Type": "application/json"}
                 )
                 
                 if response.status_code == 200:
                     result = response.json()
-                    content = self._extract_content_from_response(result)
+                    # A2A 프로토콜 응답에서 콘텐츠 추출
+                    if "response" in result:
+                        content = result["response"]
+                    elif "data" in result and isinstance(result["data"], dict):
+                        content = result["data"].get("content", str(result["data"]))
+                    else:
+                        content = str(result)
                     
-                    if content:
+                    if content and content != "{}":
                         return {
                             "success": True,
                             "content": content,

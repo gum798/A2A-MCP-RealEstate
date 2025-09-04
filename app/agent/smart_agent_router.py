@@ -337,7 +337,15 @@ class SmartAgentRouter:
             return None
         
         try:
-            # 응답 대기
+            # 먼저 latest_response 확인 (switch_to_agent에서 저장된 응답)
+            if hasattr(self, 'latest_response') and self.latest_response:
+                if self.latest_response.conversation_id == self.current_session_id:
+                    response = self.latest_response
+                    # 응답 사용 후 초기화하여 중복 사용 방지
+                    self.latest_response = None
+                    return response
+            
+            # conversation manager 히스토리에서 확인
             for _ in range(timeout_seconds):
                 messages = await self.conversation_manager.get_conversation_history(
                     self.current_session_id, limit=5
