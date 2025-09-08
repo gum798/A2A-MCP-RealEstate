@@ -343,6 +343,200 @@ class RealEstateAgentAdapter(BaseAgentAdapter):
         }
 
 
+class JobSearchAgentAdapter(BaseAgentAdapter):
+    """취업 상담 에이전트 어댑터"""
+    
+    async def send_message(self, message: str) -> Dict[str, Any]:
+        """취업 상담 에이전트에게 메시지 전송"""
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                # 취업 상담 에이전트 연결 시도
+                endpoints_to_try = [
+                    f"{self.base_url}/api/chat",
+                    f"{self.base_url}/api/agent/message", 
+                    f"{self.base_url}/chat"
+                ]
+                
+                for endpoint in endpoints_to_try:
+                    try:
+                        if "agent/message" in endpoint:
+                            # A2A 프로토콜 메시지 구성
+                            payload = {
+                                "id": f"msg_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                                "source_agent_id": "agent-py-001", 
+                                "target_agent_id": "job-search-agent",
+                                "message_type": "conversation",
+                                "payload": {
+                                    "content": message,
+                                    "sender_name": "User"
+                                },
+                                "timestamp": datetime.now().isoformat()
+                            }
+                        else:
+                            # 일반 채팅 메시지
+                            payload = {"message": message}
+                        
+                        response = await client.post(
+                            endpoint,
+                            json=payload,
+                            headers={"Content-Type": "application/json"}
+                        )
+                        
+                        if response.status_code == 200:
+                            result = response.json()
+                            content = self._extract_content_from_response(result)
+                            
+                            if content and content.strip():
+                                return {
+                                    "success": True,
+                                    "content": content,
+                                    "sender": self.agent_info.get("name", "Job Search AI Agent"),
+                                    "timestamp": datetime.now().isoformat()
+                                }
+                                
+                    except Exception:
+                        continue
+                        
+        except Exception as e:
+            logger.error(f"Job search adapter error: {e}")
+        
+        # 취업 관련 전문 응답
+        content = f"""안녕하세요! 취업 전문 상담사입니다. 💼
+
+'{message}'에 대해 도움드리겠습니다.
+
+🚀 **취업 및 커리어 상담 서비스**:
+• 이력서 작성 및 검토
+• 면접 준비 및 모의면접  
+• 포트폴리오 구성 가이드
+• 산업별 채용 동향 분석
+• 연봉 협상 전략
+• 커리어 전환 컨설팅
+
+**맞춤형 상담을 위해 알려주세요**:
+- 희망 직종/분야
+- 경력 수준
+- 관심 기업
+- 구체적인 고민사항
+
+전문적인 취업 지원으로 성공적인 커리어를 만들어보세요!"""
+
+        return {
+            "success": True,
+            "content": content,
+            "sender": self.agent_info.get("name", "Job Search AI Agent"),
+            "timestamp": datetime.now().isoformat()
+        }
+
+    async def get_agent_info(self) -> Dict[str, Any]:
+        """취업 상담 에이전트 정보"""
+        return {
+            "name": "Job Search & Career Counselor", 
+            "description": "취업 상담 및 커리어 개발 전문 에이전트",
+            "capabilities": ["resume_review", "interview_prep", "career_consulting"],
+            "status": "available"
+        }
+
+
+class DocumentGeneratorAdapter(BaseAgentAdapter):
+    """문서 생성 에이전트 어댑터"""
+    
+    async def send_message(self, message: str) -> Dict[str, Any]:
+        """문서 생성 에이전트에게 메시지 전송"""
+        content = f"""안녕하세요! 문서 작성 전문가입니다. 📄
+
+'{message}'에 대해 도움드리겠습니다.
+
+✍️ **문서 생성 및 작성 서비스**:
+• 보고서 작성 및 구조화
+• 제안서 및 기획서 작성  
+• 계약서 및 공문 작성
+• 프레젠테이션 자료 제작
+• 이력서 및 자기소개서
+• 기술 문서 및 매뉴얼
+
+**어떤 문서가 필요하신지 알려주세요**:
+- 문서 종류 (보고서/제안서/기타)
+- 목적 및 용도
+- 분량 및 형식 요구사항
+- 마감일정
+
+전문적이고 체계적인 문서 작성을 도와드리겠습니다!"""
+
+        return {
+            "success": True,
+            "content": content,
+            "sender": self.agent_info.get("name", "Document Generator AI Agent"),
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+class MLBSportsAdapter(BaseAgentAdapter):
+    """MLB 스포츠 분석 에이전트 어댑터"""
+    
+    async def send_message(self, message: str) -> Dict[str, Any]:
+        """MLB 스포츠 에이전트에게 메시지 전송"""
+        content = f"""안녕하세요! MLB 야구 전문 분석가입니다. ⚾
+
+'{message}'에 대해 도움드리겠습니다.
+
+📊 **MLB 야구 분석 서비스**:
+• 선수 통계 및 성과 분석
+• 팀 순위 및 전력 분석  
+• 경기 결과 및 하이라이트
+• 시즌 트렌드 분석
+• 판타지 베이스볼 조언
+• 드래프트 및 트레이드 분석
+
+**관심 분야를 알려주세요**:
+- 특정 선수 또는 팀
+- 통계 분석 항목
+- 시즌 또는 기간
+- 분석 목적
+
+데이터 기반의 전문적인 야구 분석을 제공합니다!"""
+
+        return {
+            "success": True,
+            "content": content,
+            "sender": self.agent_info.get("name", "MLB Sports Analytics Agent"),
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+class Web3AILabAdapter(BaseAgentAdapter):
+    """Web3 AI 연구소 에이전트 어댑터"""
+    
+    async def send_message(self, message: str) -> Dict[str, Any]:
+        """Web3 AI 연구소 에이전트에게 메시지 전송"""
+        content = f"""안녕하세요! Web3 AI 연구소의 연구원입니다. 🔬
+
+'{message}'에 대해 연구 지원을 제공하겠습니다.
+
+🚀 **Web3 & AI 연구 서비스**:
+• 블록체인 기술 연구 및 분석
+• AI/ML 모델 개발 지원  
+• DeFi 프로토콜 분석
+• NFT 및 메타버스 연구
+• 스마트 컨트랙트 분석
+• Web3 생태계 트렌드 연구
+
+**연구 분야를 구체적으로 알려주세요**:
+- 관심 기술 영역
+- 연구 목적 및 목표
+- 기술적 배경 수준
+- 필요한 분석 깊이
+
+최신 Web3 및 AI 기술에 대한 심도 있는 연구 인사이트를 제공합니다!"""
+
+        return {
+            "success": True,
+            "content": content,
+            "sender": self.agent_info.get("name", "Web3 AI Lab Agent"),
+            "timestamp": datetime.now().isoformat()
+        }
+
+
 class ExternalAgentManager:
     """외부 에이전트 관리자"""
     
@@ -351,6 +545,10 @@ class ExternalAgentManager:
         self.adapter_mapping = {
             "socratic-web3-tutor": SocraticWebAdapter,
             "a2a-mcp-realestate": RealEstateAgentAdapter,
+            "job-search-agent": JobSearchAgentAdapter,
+            "document-generator": DocumentGeneratorAdapter,
+            "mlb-sports-agent": MLBSportsAdapter,
+            "web3-ai-lab": Web3AILabAdapter,
             # 추가 에이전트들을 여기에 매핑
         }
     

@@ -56,11 +56,11 @@ class SmartAgentRouter:
             r"(.*)전환.*해",
             r"(.*)바꿔.*줘",
             
-            # 주제별 전환
-            r"(.*)(웹3|web3|블록체인|blockchain)(.*)배우고?\s*싶",
-            r"(.*)(웹3|web3|블록체인|blockchain)(.*)알고?\s*싶",
-            r"(.*)(웹3|web3|블록체인|blockchain)(.*)질문",
-            r"(.*)(ai|인공지능)(.*)배우고?\s*싶",
+            # 명시적인 에이전트 요청만 - 단순히 주제를 언급하는 것이 아니라 에이전트/튜터를 명확히 요청하는 경우만
+            r"(.*)(웹3|web3|블록체인|blockchain)(.*)에이전트",
+            r"(.*)(웹3|web3|블록체인|blockchain)(.*)튜터(.*)연결",
+            r"(.*)(웹3|web3|블록체인|blockchain)(.*)전문가(.*)연결",
+            r"(.*)(소크라테스|socratic)(.*)연결",
             
             # 부동산 관련 전환
             r"(.*)(부동산|real\s*estate)(.*)도움",
@@ -133,17 +133,13 @@ class SmartAgentRouter:
             (agent_switch_needed, target_agent_id, response_message)
         """
         
-        # 1. 직접적인 에이전트 전환 요청 감지
+        # 1. 직접적인 에이전트 전환 요청 감지만 처리
         switch_result = self._detect_agent_switch_request(user_message)
         if switch_result[0]:
             return switch_result
         
-        # 2. 레지스트리 기반 에이전트 추천
-        recommended_agents = agent_registry.get_recommended_agents(user_message, limit=1)
-        if recommended_agents:
-            best_agent = recommended_agents[0]
-            if best_agent.agent_id in self.agent_profiles:
-                return False, best_agent.agent_id, f"이 주제는 {best_agent.name}이 전문이에요. 전환할까요?"
+        # 2. 자동 추천은 제거 - 사용자가 현재 에이전트와 대화 중일 때는 방해하지 않음
+        # (기존의 자동 추천 로직 제거하여 unwanted switching 방지)
         
         # 3. 기본적으로 전환 없음
         return False, None, None
